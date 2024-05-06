@@ -5,8 +5,6 @@
 
 package net.neoforged.neoforge.oldtest.item;
 
-import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
@@ -23,16 +21,19 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.common.extensions.IFluidExtension;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.fluids.FluidActionResult;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.fluids.FluidUtil;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.fluids.capability.templates.FluidHandlerItemStackSimple;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Mod(CustomFluidContainerTest.MODID)
 public class CustomFluidContainerTest {
@@ -62,7 +63,7 @@ public class CustomFluidContainerTest {
     }
 
     private void registerCaps(RegisterCapabilitiesEvent event) {
-        event.registerItem(Capabilities.FluidHandler.ITEM, (stack, ctx) -> new FluidHandlerItemStackSimple(SIMPLE_FLUID_CONTENT, stack, FluidType.BUCKET_VOLUME), CUSTOM_FLUID_CONTAINER.get());
+        event.registerItem(Capabilities.FluidHandler.ITEM, (stack, ctx) -> new FluidHandlerItemStackSimple(SIMPLE_FLUID_CONTENT, stack, IFluidExtension.BUCKET_VOLUME), CUSTOM_FLUID_CONTAINER.get());
     }
 
     /**
@@ -81,7 +82,7 @@ public class CustomFluidContainerTest {
                 if (fluidStack.isEmpty()) {
                     name.set(name.get() + " (empty)");
                 } else {
-                    name.set(name.get() + " (" + fluidStack.getFluidType().getDescription().getString() + ")");
+                    name.set(name.get() + " (" + fluidStack.getFluid().getDescription().getString() + ")");
                 }
             });
             return Component.literal(name.get());

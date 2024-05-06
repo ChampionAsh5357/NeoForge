@@ -1,14 +1,8 @@
-/*
- * Copyright (c) Forge Development LLC and contributors
- * SPDX-License-Identifier: LGPL-2.1-only
- */
-
 package net.neoforged.neoforge.client.extensions.common;
 
 import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.function.Consumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -23,28 +17,26 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidType;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.util.function.Consumer;
+
 /**
- * {@linkplain LogicalSide#CLIENT Client-only} extensions to {@link FluidType}.
+ * {@linkplain LogicalSide#CLIENT Client-only} extensions to {@link Fluid}.
  *
- * @see FluidType#initializeClient(Consumer)
+ * @see Fluid#initializeClient(Consumer)
  */
-public interface IClientFluidTypeExtensions {
-    IClientFluidTypeExtensions DEFAULT = new IClientFluidTypeExtensions() {};
+public interface IClientFluidExtensions {
 
-    static IClientFluidTypeExtensions of(FluidState state) {
-        return of(state.getFluidType());
+    IClientFluidExtensions DEFAULT = new IClientFluidExtensions() {};
+
+    static IClientFluidExtensions of(FluidState state) {
+        return of(state.getType());
     }
 
-    static IClientFluidTypeExtensions of(Fluid fluid) {
-        return of(fluid.getFluidType());
-    }
-
-    static IClientFluidTypeExtensions of(FluidType type) {
-        return type.getRenderPropertiesInternal() instanceof IClientFluidTypeExtensions props ? props : DEFAULT;
+    static IClientFluidExtensions of(Fluid fluid) {
+        return fluid.getRenderPropertiesInternal() instanceof IClientFluidExtensions props ? props : DEFAULT;
     }
 
     /* Default Accessors */

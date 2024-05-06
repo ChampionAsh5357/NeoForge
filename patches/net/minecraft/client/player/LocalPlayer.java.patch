@@ -54,17 +54,17 @@
          }
  
 -        if ((!this.isInWater() || this.isUnderWater()) && flag4 && this.minecraft.options.keySprint.isDown()) {
-+        if (!this.isSprinting() && (!(this.isInWater() || this.isInFluidType((fluidType, height) -> this.canSwimInFluidType(fluidType))) || (this.isUnderWater() || this.canStartSwimming())) && this.hasEnoughImpulseToStartSprinting() && flag4 && !this.isUsingItem() && !this.hasEffect(MobEffects.BLINDNESS) && this.minecraft.options.keySprint.isDown()) {
++        if (!this.isSprinting() && (!(this.isInWater() || this.isInFluid((fluid, height) -> this.canSwimInFluid(fluid))) || (this.isUnderWater() || this.canStartSwimming())) && this.hasEnoughImpulseToStartSprinting() && flag4 && !this.isUsingItem() && !this.hasEffect(MobEffects.BLINDNESS) && this.minecraft.options.keySprint.isDown()) {
              this.setSprinting(true);
          }
  
          if (this.isSprinting()) {
              boolean flag7 = !this.input.hasForwardImpulse() || !this.hasEnoughFoodToStartSprinting();
 -            boolean flag8 = flag7 || this.horizontalCollision && !this.minorHorizontalCollision || this.isInWater() && !this.isUnderWater();
-+            boolean flag8 = flag7 || this.horizontalCollision && !this.minorHorizontalCollision || this.isInWater() && !this.isUnderWater() || (this.isInFluidType((fluidType, height) -> this.canSwimInFluidType(fluidType)) && !this.canStartSwimming());
++            boolean flag8 = flag7 || this.horizontalCollision && !this.minorHorizontalCollision || this.isInWater() && !this.isUnderWater() || (this.isInFluid((fluid, height) -> this.canSwimInFluid(fluid)) && !this.canStartSwimming());
              if (this.isSwimming()) {
 -                if (!this.onGround() && !this.input.shiftKeyDown && flag7 || !this.isInWater()) {
-+                if (!this.onGround() && !this.input.shiftKeyDown && flag7 || !(this.isInWater() || this.isInFluidType((fluidType, height) -> this.canSwimInFluidType(fluidType)))) {
++                if (!this.onGround() && !this.input.shiftKeyDown && flag7 || !(this.isInWater() || this.isInFluid((fluid, height) -> this.canSwimInFluid(fluid)))) {
                      this.setSprinting(false);
                  }
              } else if (flag8) {
@@ -90,9 +90,9 @@
          this.wasFallFlying = this.isFallFlying();
 -        if (this.isInWater() && this.input.shiftKeyDown && this.isAffectedByFluids()) {
 -            this.goDownInWater();
-+        net.neoforged.neoforge.fluids.FluidType fluidType = this.getMaxHeightFluidType();
-+        if ((this.isInWater() || (!fluidType.isAir() && this.canSwimInFluidType(fluidType))) && this.input.shiftKeyDown && this.isAffectedByFluids()) {
-+            this.sinkInFluid(this.isInWater() ? net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value() : fluidType);
++        net.minecraft.world.level.material.Fluid fluid = this.getMaxHeightFluid();
++        if ((this.isInWater() || (!fluid.isAir() && this.canSwimInFluid(fluid))) && this.input.shiftKeyDown && this.isAffectedByFluids()) {
++            this.sinkInFluid(this.isInWater() ? net.minecraft.world.level.material.Fluids.WATER : fluid);
          }
  
          if (this.isEyeInFluid(FluidTags.WATER)) {

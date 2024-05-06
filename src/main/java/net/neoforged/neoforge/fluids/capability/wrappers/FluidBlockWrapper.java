@@ -7,8 +7,8 @@ package net.neoforged.neoforge.fluids.capability.wrappers;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.common.extensions.IFluidExtension;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.fluids.IFluidBlock;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 
@@ -42,7 +42,7 @@ public class FluidBlockWrapper implements IFluidHandler {
                 return (int) (stored.getAmount() / filledPercentage);
             }
         }
-        return FluidType.BUCKET_VOLUME;
+        return IFluidExtension.BUCKET_VOLUME;
     }
 
     @Override

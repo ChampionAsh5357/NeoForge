@@ -13,37 +13,13 @@ import com.google.common.collect.Sets;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.Lifecycle;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import net.minecraft.ChatFormatting;
 import net.minecraft.ResourceLocationException;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.HolderSet;
-import net.minecraft.core.Registry;
+import net.minecraft.core.*;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -51,11 +27,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.ChatDecorator;
-import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.*;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
@@ -79,12 +51,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectUtil;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ExperienceOrb;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.SlotAccess;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -96,16 +63,7 @@ import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ClickAction;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.AdventureModePredicate;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.EnchantedBookItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.PotionItem;
-import net.minecraft.world.item.SpawnEggItem;
-import net.minecraft.world.item.Tiers;
-import net.minecraft.world.item.TippedArrowItem;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.context.UseOnContext;
@@ -127,7 +85,6 @@ import net.minecraft.world.level.block.state.pattern.BlockInWorld;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -147,46 +104,16 @@ import net.neoforged.neoforge.common.loot.LootTableIdCondition;
 import net.neoforged.neoforge.common.util.BlockSnapshot;
 import net.neoforged.neoforge.common.util.Lazy;
 import net.neoforged.neoforge.common.util.MavenVersionStringHelper;
-import net.neoforged.neoforge.event.AnvilUpdateEvent;
-import net.neoforged.neoforge.event.DifficultyChangeEvent;
-import net.neoforged.neoforge.event.EventHooks;
-import net.neoforged.neoforge.event.GrindstoneEvent;
-import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
-import net.neoforged.neoforge.event.ItemStackedOnOtherEvent;
-import net.neoforged.neoforge.event.ModMismatchEvent;
-import net.neoforged.neoforge.event.RegisterStructureConversionsEvent;
-import net.neoforged.neoforge.event.ServerChatEvent;
-import net.neoforged.neoforge.event.VanillaGameEvent;
+import net.neoforged.neoforge.event.*;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.EntityTravelToDimensionEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
-import net.neoforged.neoforge.event.entity.living.EnderManAngerEvent;
-import net.neoforged.neoforge.event.entity.living.LivingAttackEvent;
-import net.neoforged.neoforge.event.entity.living.LivingBreatheEvent;
-import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDrownEvent;
-import net.neoforged.neoforge.event.entity.living.LivingEvent;
-import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
-import net.neoforged.neoforge.event.entity.living.LivingGetProjectileEvent;
-import net.neoforged.neoforge.event.entity.living.LivingHurtEvent;
-import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
-import net.neoforged.neoforge.event.entity.living.LivingSwapItemsEvent;
-import net.neoforged.neoforge.event.entity.living.LivingUseTotemEvent;
-import net.neoforged.neoforge.event.entity.living.LootingLevelEvent;
-import net.neoforged.neoforge.event.entity.living.ShieldBlockEvent;
-import net.neoforged.neoforge.event.entity.player.AnvilRepairEvent;
-import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
-import net.neoforged.neoforge.event.entity.player.CriticalHitEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.living.*;
+import net.neoforged.neoforge.event.entity.player.*;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.NoteBlockEvent;
-import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import net.neoforged.neoforge.resource.ResourcePackLoader;
 import net.neoforged.neoforge.server.permission.PermissionAPI;
@@ -198,6 +125,17 @@ import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
+
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Class for various common (i.e. client and server-side) hooks.
@@ -749,25 +687,6 @@ public class CommonHooks {
         return Codec.of(LootPool.CODEC.listOf(), decoder);
     }
 
-    /**
-     * Returns a vanilla fluid type for the given fluid.
-     *
-     * @param fluid the fluid looking for its type
-     * @return the type of the fluid if vanilla
-     * @throws RuntimeException if the fluid is not a vanilla one
-     */
-    public static FluidType getVanillaFluidType(Fluid fluid) {
-        if (fluid == Fluids.EMPTY)
-            return NeoForgeMod.EMPTY_TYPE.value();
-        if (fluid == Fluids.WATER || fluid == Fluids.FLOWING_WATER)
-            return NeoForgeMod.WATER_TYPE.value();
-        if (fluid == Fluids.LAVA || fluid == Fluids.FLOWING_LAVA)
-            return NeoForgeMod.LAVA_TYPE.value();
-        if (NeoForgeMod.MILK.asOptional().filter(milk -> milk == fluid).isPresent() || NeoForgeMod.FLOWING_MILK.asOptional().filter(milk -> milk == fluid).isPresent())
-            return NeoForgeMod.MILK_TYPE.value();
-        throw new RuntimeException("Mod fluids must override getFluidType.");
-    }
-
     public static TagKey<Block> getTagFromVanillaTier(Tiers tier) {
         return switch (tier) {
             case WOOD -> Tags.Blocks.NEEDS_WOOD_TOOL;
@@ -1213,7 +1132,7 @@ public class CommonHooks {
 
     /**
      * Handles living entities being underwater. This fires the {@link LivingBreatheEvent} and if the entity's air supply is less than or equal to zero also the {@link LivingDrownEvent}. Additionally, when the entity is underwater it will
-     * dismount if {@link IEntityExtension#canBeRiddenUnderFluidType(FluidType, Entity)} returns false.
+     * dismount if {@link IEntityExtension#canBeRiddenUnderFluid(Fluid, Entity)} returns false.
      *
      * @param entity           The living entity which is currently updated
      * @param consumeAirAmount The amount of air to consume when the entity is unable to breathe
@@ -1222,10 +1141,10 @@ public class CommonHooks {
      */
     public static void onLivingBreathe(LivingEntity entity, int consumeAirAmount, int refillAirAmount) {
         // Check things that vanilla considers to be air - these will cause the air supply to be increased.
-        boolean isAir = entity.getEyeInFluidType().isAir() || entity.level().getBlockState(BlockPos.containing(entity.getX(), entity.getEyeY(), entity.getZ())).is(Blocks.BUBBLE_COLUMN);
+        boolean isAir = entity.getEyeInFluid().isAir() || entity.level().getBlockState(BlockPos.containing(entity.getX(), entity.getEyeY(), entity.getZ())).is(Blocks.BUBBLE_COLUMN);
         boolean canBreathe = isAir;
         // The following effects cause the entity to not drown, but do not cause the air supply to be increased.
-        if (!isAir && (MobEffectUtil.hasWaterBreathing(entity) || !entity.canDrownInFluidType(entity.getEyeInFluidType()) || (entity instanceof Player player && player.getAbilities().invulnerable))) {
+        if (!isAir && (MobEffectUtil.hasWaterBreathing(entity) || !entity.canDrownInFluid(entity.getEyeInFluid()) || (entity instanceof Player player && player.getAbilities().invulnerable))) {
             canBreathe = true;
             refillAirAmount = 0;
         }
@@ -1254,7 +1173,7 @@ public class CommonHooks {
             }
         }
 
-        if (!isAir && !entity.level().isClientSide && entity.isPassenger() && entity.getVehicle() != null && !entity.getVehicle().canBeRiddenUnderFluidType(entity.getEyeInFluidType(), entity)) {
+        if (!isAir && !entity.level().isClientSide && entity.isPassenger() && entity.getVehicle() != null && !entity.getVehicle().canBeRiddenUnderFluid(entity.getEyeInFluid(), entity)) {
             entity.stopRiding();
         }
     }

@@ -9,32 +9,14 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
 import net.minecraft.DetectedVersion;
 import net.minecraft.advancements.critereon.EntitySubPredicate;
 import net.minecraft.advancements.critereon.ItemSubPredicate;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.synchronization.ArgumentTypeInfo;
 import net.minecraft.commands.synchronization.ArgumentTypeInfos;
 import net.minecraft.commands.synchronization.SingletonArgumentInfo;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.MappedRegistry;
-import net.minecraft.core.RegistrationInfo;
-import net.minecraft.core.RegistryCodecs;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
@@ -45,121 +27,62 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.InclusiveRange;
 import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.RangedAttribute;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.PointedDripstoneBlock;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.GenerationStep.Decoration;
 import net.minecraft.world.level.levelgen.carver.ConfiguredWorldCarver;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.pathfinder.PathType;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.CrashReportCallables;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModLoader;
-import net.neoforged.fml.ModLoadingIssue;
-import net.neoforged.fml.VersionChecker;
+import net.neoforged.fml.*;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.fml.loading.progress.StartupNotificationManager;
 import net.neoforged.neoforge.capabilities.CapabilityHooks;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidExtensions;
 import net.neoforged.neoforge.common.advancements.critereon.PiglinCurrencyItemPredicate;
 import net.neoforged.neoforge.common.advancements.critereon.PiglinNeutralArmorEntityPredicate;
 import net.neoforged.neoforge.common.advancements.critereon.ToolActionItemPredicate;
-import net.neoforged.neoforge.common.conditions.AndCondition;
-import net.neoforged.neoforge.common.conditions.FalseCondition;
-import net.neoforged.neoforge.common.conditions.ICondition;
-import net.neoforged.neoforge.common.conditions.ItemExistsCondition;
-import net.neoforged.neoforge.common.conditions.ModLoadedCondition;
-import net.neoforged.neoforge.common.conditions.NotCondition;
-import net.neoforged.neoforge.common.conditions.OrCondition;
-import net.neoforged.neoforge.common.conditions.TagEmptyCondition;
-import net.neoforged.neoforge.common.conditions.TrueCondition;
-import net.neoforged.neoforge.common.crafting.CompoundIngredient;
-import net.neoforged.neoforge.common.crafting.DataComponentIngredient;
-import net.neoforged.neoforge.common.crafting.DifferenceIngredient;
-import net.neoforged.neoforge.common.crafting.IngredientType;
-import net.neoforged.neoforge.common.crafting.IntersectionIngredient;
+import net.neoforged.neoforge.common.conditions.*;
+import net.neoforged.neoforge.common.crafting.*;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.common.data.NeoForgeDamageTypeTagsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeAdvancementProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeBiomeTagsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeBlockTagsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeDataMapsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeEnchantmentTagsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeEntityTypeTagsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeFluidTagsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeItemTagsProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeLanguageProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeLootTableProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeRecipeProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeRegistryOrderReportProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeSpriteSourceProvider;
-import net.neoforged.neoforge.common.data.internal.NeoForgeStructureTagsProvider;
-import net.neoforged.neoforge.common.data.internal.VanillaSoundDefinitionsProvider;
+import net.neoforged.neoforge.common.data.internal.*;
 import net.neoforged.neoforge.common.loot.AddTableLootModifier;
 import net.neoforged.neoforge.common.loot.CanToolPerformAction;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.neoforged.neoforge.common.loot.LootTableIdCondition;
-import net.neoforged.neoforge.common.world.BiomeModifier;
-import net.neoforged.neoforge.common.world.BiomeModifiers;
+import net.neoforged.neoforge.common.world.*;
 import net.neoforged.neoforge.common.world.BiomeModifiers.AddFeaturesBiomeModifier;
 import net.neoforged.neoforge.common.world.BiomeModifiers.AddSpawnsBiomeModifier;
 import net.neoforged.neoforge.common.world.BiomeModifiers.RemoveFeaturesBiomeModifier;
 import net.neoforged.neoforge.common.world.BiomeModifiers.RemoveSpawnsBiomeModifier;
-import net.neoforged.neoforge.common.world.NoneBiomeModifier;
-import net.neoforged.neoforge.common.world.NoneStructureModifier;
-import net.neoforged.neoforge.common.world.StructureModifier;
-import net.neoforged.neoforge.common.world.StructureModifiers;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.CauldronFluidContent;
-import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.forge.snapshots.ForgeSnapshotsMod;
 import net.neoforged.neoforge.internal.versions.neoforge.NeoForgeVersion;
 import net.neoforged.neoforge.network.DualStackUtils;
-import net.neoforged.neoforge.registries.DataPackRegistryEvent;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
-import net.neoforged.neoforge.registries.NeoForgeRegistriesSetup;
-import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.neoforge.registries.*;
 import net.neoforged.neoforge.registries.datamaps.builtin.NeoForgeDataMaps;
-import net.neoforged.neoforge.registries.holdersets.AndHolderSet;
-import net.neoforged.neoforge.registries.holdersets.AnyHolderSet;
-import net.neoforged.neoforge.registries.holdersets.HolderSetType;
-import net.neoforged.neoforge.registries.holdersets.NotHolderSet;
-import net.neoforged.neoforge.registries.holdersets.OrHolderSet;
+import net.neoforged.neoforge.registries.holdersets.*;
 import net.neoforged.neoforge.server.command.EnumArgument;
 import net.neoforged.neoforge.server.command.ModIdArgument;
 import net.neoforged.neoforge.server.permission.events.PermissionGatherEvent;
@@ -170,6 +93,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 @SuppressWarnings("unused")
 @Mod(NeoForgeVersion.MOD_ID)
@@ -386,146 +315,9 @@ public class NeoForgeMod {
     public static final DeferredHolder<ItemSubPredicate.Type<?>, ItemSubPredicate.Type<ToolActionItemPredicate>> TOOL_ACTION_PREDICATE = ITEM_SUB_PREDICATES.register("tool_action", () -> ToolActionItemPredicate.TYPE);
     public static final DeferredHolder<ItemSubPredicate.Type<?>, ItemSubPredicate.Type<PiglinCurrencyItemPredicate>> PIGLIN_CURRENCY_PREDICATE = ITEM_SUB_PREDICATES.register("piglin_currency", () -> PiglinCurrencyItemPredicate.TYPE);
 
-    private static final DeferredRegister<FluidType> VANILLA_FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, "minecraft");
-
-    public static final Holder<FluidType> EMPTY_TYPE = VANILLA_FLUID_TYPES.register("empty", () -> new FluidType(FluidType.Properties.create()
-            .descriptionId("block.minecraft.air")
-            .motionScale(1D)
-            .canPushEntity(false)
-            .canSwim(false)
-            .canDrown(false)
-            .fallDistanceModifier(1F)
-            .pathType(null)
-            .adjacentPathType(null)
-            .density(0)
-            .temperature(0)
-            .viscosity(0)) {
-        @Override
-        public void setItemMovement(ItemEntity entity) {
-            if (!entity.isNoGravity()) entity.setDeltaMovement(entity.getDeltaMovement().add(0.0D, -0.04D, 0.0D));
-        }
-    });
-    public static final Holder<FluidType> WATER_TYPE = VANILLA_FLUID_TYPES.register("water", () -> new FluidType(FluidType.Properties.create()
-            .descriptionId("block.minecraft.water")
-            .fallDistanceModifier(0F)
-            .canExtinguish(true)
-            .canConvertToSource(true)
-            .supportsBoating(true)
-            .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
-            .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY)
-            .sound(SoundActions.FLUID_VAPORIZE, SoundEvents.FIRE_EXTINGUISH)
-            .canHydrate(true)
-            .addDripstoneDripping(PointedDripstoneBlock.WATER_TRANSFER_PROBABILITY_PER_RANDOM_TICK, ParticleTypes.DRIPPING_DRIPSTONE_WATER, Blocks.WATER_CAULDRON, SoundEvents.POINTED_DRIPSTONE_DRIP_WATER_INTO_CAULDRON)) {
-        @Override
-        public boolean canConvertToSource(FluidState state, LevelReader reader, BlockPos pos) {
-            if (reader instanceof Level level) {
-                return level.getGameRules().getBoolean(GameRules.RULE_WATER_SOURCE_CONVERSION);
-            }
-            //Best guess fallback to default (true)
-            return super.canConvertToSource(state, reader, pos);
-        }
-
-        @Override
-        public @Nullable PathType getBlockPathType(FluidState state, BlockGetter level, BlockPos pos, @Nullable Mob mob, boolean canFluidLog) {
-            return canFluidLog ? super.getBlockPathType(state, level, pos, mob, true) : null;
-        }
-
-        @Override
-        public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-            consumer.accept(new IClientFluidTypeExtensions() {
-                private static final ResourceLocation UNDERWATER_LOCATION = new ResourceLocation("textures/misc/underwater.png"),
-                        WATER_STILL = new ResourceLocation("block/water_still"),
-                        WATER_FLOW = new ResourceLocation("block/water_flow"),
-                        WATER_OVERLAY = new ResourceLocation("block/water_overlay");
-
-                @Override
-                public ResourceLocation getStillTexture() {
-                    return WATER_STILL;
-                }
-
-                @Override
-                public ResourceLocation getFlowingTexture() {
-                    return WATER_FLOW;
-                }
-
-                @Override
-                public ResourceLocation getOverlayTexture() {
-                    return WATER_OVERLAY;
-                }
-
-                @Override
-                public ResourceLocation getRenderOverlayTexture(Minecraft mc) {
-                    return UNDERWATER_LOCATION;
-                }
-
-                @Override
-                public int getTintColor() {
-                    return 0xFF3F76E4;
-                }
-
-                @Override
-                public int getTintColor(FluidState state, BlockAndTintGetter getter, BlockPos pos) {
-                    return BiomeColors.getAverageWaterColor(getter, pos) | 0xFF000000;
-                }
-            });
-        }
-    });
-    public static final Holder<FluidType> LAVA_TYPE = VANILLA_FLUID_TYPES.register("lava", () -> new FluidType(FluidType.Properties.create()
-            .descriptionId("block.minecraft.lava")
-            .canSwim(false)
-            .canDrown(false)
-            .pathType(PathType.LAVA)
-            .adjacentPathType(null)
-            .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
-            .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA)
-            .lightLevel(15)
-            .density(3000)
-            .viscosity(6000)
-            .temperature(1300)
-            .addDripstoneDripping(PointedDripstoneBlock.LAVA_TRANSFER_PROBABILITY_PER_RANDOM_TICK, ParticleTypes.DRIPPING_DRIPSTONE_LAVA, Blocks.LAVA_CAULDRON, SoundEvents.POINTED_DRIPSTONE_DRIP_LAVA_INTO_CAULDRON)) {
-        @Override
-        public boolean canConvertToSource(FluidState state, LevelReader reader, BlockPos pos) {
-            if (reader instanceof Level level) {
-                return level.getGameRules().getBoolean(GameRules.RULE_LAVA_SOURCE_CONVERSION);
-            }
-            //Best guess fallback to default (false)
-            return super.canConvertToSource(state, reader, pos);
-        }
-
-        @Override
-        public double motionScale(Entity entity) {
-            return entity.level().dimensionType().ultraWarm() ? 0.007D : 0.0023333333333333335D;
-        }
-
-        @Override
-        public void setItemMovement(ItemEntity entity) {
-            Vec3 vec3 = entity.getDeltaMovement();
-            entity.setDeltaMovement(vec3.x * (double) 0.95F, vec3.y + (double) (vec3.y < (double) 0.06F ? 5.0E-4F : 0.0F), vec3.z * (double) 0.95F);
-        }
-
-        @Override
-        public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-            consumer.accept(new IClientFluidTypeExtensions() {
-                private static final ResourceLocation LAVA_STILL = new ResourceLocation("block/lava_still"),
-                        LAVA_FLOW = new ResourceLocation("block/lava_flow");
-
-                @Override
-                public ResourceLocation getStillTexture() {
-                    return LAVA_STILL;
-                }
-
-                @Override
-                public ResourceLocation getFlowingTexture() {
-                    return LAVA_FLOW;
-                }
-            });
-        }
-    });
-
     private static boolean enableMilkFluid = false;
     public static final DeferredHolder<SoundEvent, SoundEvent> BUCKET_EMPTY_MILK = DeferredHolder.create(Registries.SOUND_EVENT, new ResourceLocation("item.bucket.empty_milk"));
     public static final DeferredHolder<SoundEvent, SoundEvent> BUCKET_FILL_MILK = DeferredHolder.create(Registries.SOUND_EVENT, new ResourceLocation("item.bucket.fill_milk"));
-    public static final DeferredHolder<FluidType, FluidType> MILK_TYPE = DeferredHolder.create(NeoForgeRegistries.Keys.FLUID_TYPES, new ResourceLocation("milk"));
     public static final DeferredHolder<Fluid, Fluid> MILK = DeferredHolder.create(Registries.FLUID, new ResourceLocation("milk"));
     public static final DeferredHolder<Fluid, Fluid> FLOWING_MILK = DeferredHolder.create(Registries.FLUID, new ResourceLocation("flowing_milk"));
 
@@ -574,7 +366,6 @@ public class NeoForgeMod {
         BIOME_MODIFIER_SERIALIZERS.register(modEventBus);
         STRUCTURE_MODIFIER_SERIALIZERS.register(modEventBus);
         HOLDER_SET_TYPES.register(modEventBus);
-        VANILLA_FLUID_TYPES.register(modEventBus);
         ENTITY_PREDICATE_CODECS.register(modEventBus);
         ITEM_SUB_PREDICATES.register(modEventBus);
         INGREDIENT_TYPES.register(modEventBus);
@@ -661,37 +452,83 @@ public class NeoForgeMod {
                 helper.register(BUCKET_FILL_MILK.getId(), SoundEvent.createVariableRangeEvent(BUCKET_FILL_MILK.getId()));
             });
 
-            // register fluid type
-            event.register(NeoForgeRegistries.Keys.FLUID_TYPES, helper -> helper.register(MILK_TYPE.unwrapKey().orElseThrow(), new FluidType(
-                    FluidType.Properties.create().density(1024).viscosity(1024)
-                            .sound(SoundActions.BUCKET_FILL, BUCKET_FILL_MILK.value())
-                            .sound(SoundActions.BUCKET_EMPTY, BUCKET_EMPTY_MILK.value())) {
-                @Override
-                public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-                    consumer.accept(new IClientFluidTypeExtensions() {
-                        private static final ResourceLocation MILK_STILL = new ResourceLocation(NeoForgeVersion.MOD_ID, "block/milk_still"),
-                                MILK_FLOW = new ResourceLocation(NeoForgeVersion.MOD_ID, "block/milk_flowing");
-
-                        @Override
-                        public ResourceLocation getStillTexture() {
-                            return MILK_STILL;
-                        }
-
-                        @Override
-                        public ResourceLocation getFlowingTexture() {
-                            return MILK_FLOW;
-                        }
-                    });
-                }
-            }));
-
             // register fluids
             event.register(Registries.FLUID, helper -> {
                 // set up properties
-                BaseFlowingFluid.Properties properties = new BaseFlowingFluid.Properties(MILK_TYPE::value, MILK::value, FLOWING_MILK::value).bucket(() -> Items.MILK_BUCKET);
+                BaseFlowingFluid.Properties properties = new BaseFlowingFluid.Properties(MILK::value, FLOWING_MILK::value).bucket(() -> Items.MILK_BUCKET);
+                Map<SoundAction, SoundEvent> milkSounds = Map.of(
+                        SoundActions.BUCKET_FILL, BUCKET_FILL_MILK.value(),
+                        SoundActions.BUCKET_EMPTY, BUCKET_EMPTY_MILK.value()
+                );
 
-                helper.register(MILK.getId(), new BaseFlowingFluid.Source(properties));
-                helper.register(FLOWING_MILK.getId(), new BaseFlowingFluid.Flowing(properties));
+                helper.register(MILK.getId(), new BaseFlowingFluid.Source(properties) {
+                    @Override
+                    public int getDensity() {
+                        return 1024;
+                    }
+
+                    @Override
+                    public int getViscosity() {
+                        return 1024;
+                    }
+
+                    @Override
+                    public @Nullable SoundEvent getSound(SoundAction action) {
+                        return milkSounds.get(action);
+                    }
+
+                    @Override
+                    public void initializeClient(Consumer<IClientFluidExtensions> consumer) {
+                        consumer.accept(new IClientFluidExtensions() {
+                            private static final ResourceLocation MILK_STILL = new ResourceLocation(NeoForgeVersion.MOD_ID, "block/milk_still"),
+                                    MILK_FLOW = new ResourceLocation(NeoForgeVersion.MOD_ID, "block/milk_flowing");
+
+                            @Override
+                            public ResourceLocation getStillTexture() {
+                                return MILK_STILL;
+                            }
+
+                            @Override
+                            public ResourceLocation getFlowingTexture() {
+                                return MILK_FLOW;
+                            }
+                        });
+                    }
+                });
+                helper.register(FLOWING_MILK.getId(), new BaseFlowingFluid.Flowing(properties) {
+                    @Override
+                    public int getDensity() {
+                        return 1024;
+                    }
+
+                    @Override
+                    public int getViscosity() {
+                        return 1024;
+                    }
+
+                    @Override
+                    public @Nullable SoundEvent getSound(SoundAction action) {
+                        return milkSounds.get(action);
+                    }
+
+                    @Override
+                    public void initializeClient(Consumer<IClientFluidExtensions> consumer) {
+                        consumer.accept(new IClientFluidExtensions() {
+                            private static final ResourceLocation MILK_STILL = new ResourceLocation(NeoForgeVersion.MOD_ID, "block/milk_still"),
+                                    MILK_FLOW = new ResourceLocation(NeoForgeVersion.MOD_ID, "block/milk_flowing");
+
+                            @Override
+                            public ResourceLocation getStillTexture() {
+                                return MILK_STILL;
+                            }
+
+                            @Override
+                            public ResourceLocation getFlowingTexture() {
+                                return MILK_FLOW;
+                            }
+                        });
+                    }
+                });
             });
         }
     }

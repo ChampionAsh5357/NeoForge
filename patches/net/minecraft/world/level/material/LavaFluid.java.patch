@@ -1,5 +1,14 @@
 --- a/net/minecraft/world/level/material/LavaFluid.java
 +++ b/net/minecraft/world/level/material/LavaFluid.java
+@@ -24,7 +_,7 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.block.state.StateDefinition;
+ 
+-public abstract class LavaFluid extends FlowingFluid {
++public abstract class LavaFluid extends FlowingFluid implements net.neoforged.neoforge.common.extensions.ILavaFluidExtension {
+     public static final float MIN_LEVEL_CUTOFF = 0.44444445F;
+ 
+     @Override
 @@ -87,7 +_,7 @@
                      BlockState blockstate = p_230572_.getBlockState(blockpos);
                      if (blockstate.isAir()) {

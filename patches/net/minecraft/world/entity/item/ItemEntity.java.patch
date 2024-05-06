@@ -39,8 +39,8 @@
              this.yo = this.getY();
              this.zo = this.getZ();
              Vec3 vec3 = this.getDeltaMovement();
-+            net.neoforged.neoforge.fluids.FluidType fluidType = this.getMaxHeightFluidType();
-+            if (!fluidType.isAir() && !fluidType.isVanilla() && this.getFluidTypeHeight(fluidType) > 0.1F) fluidType.setItemMovement(this);
++            net.minecraft.world.level.material.Fluid fluid = this.getMaxHeightFluid();
++            if (!fluid.isAir() && !fluid.isVanilla() && this.getFluidHeight(fluid) > 0.1F) fluid.setItemMovement(this);
 +            else
              if (this.isInWater() && this.getFluidHeight(FluidTags.WATER) > 0.1F) {
                  this.setUnderwaterMovement();

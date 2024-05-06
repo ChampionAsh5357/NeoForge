@@ -5,11 +5,12 @@
 
 package net.neoforged.neoforge.common.extensions;
 
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForgeMod;
-import net.neoforged.neoforge.fluids.FluidType;
 
 public interface ILivingEntityExtension extends IEntityExtension {
     default LivingEntity self() {
@@ -17,38 +18,38 @@ public interface ILivingEntityExtension extends IEntityExtension {
     }
 
     @Override
-    default boolean canSwimInFluidType(FluidType type) {
-        if (type == NeoForgeMod.WATER_TYPE.value()) return !self().isSensitiveToWater();
-        else return IEntityExtension.super.canSwimInFluidType(type);
+    default boolean canSwimInFluid(Fluid fluid) {
+        if (fluid.is(FluidTags.WATER)) return !self().isSensitiveToWater();
+        else return IEntityExtension.super.canSwimInFluid(fluid);
     }
 
     /**
      * Performs what to do when an entity attempts to go up or "jump" in a fluid.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      */
-    default void jumpInFluid(FluidType type) {
+    default void jumpInFluid(Fluid fluid) {
         self().setDeltaMovement(self().getDeltaMovement().add(0.0D, (double) 0.04F * self().getAttributeValue(NeoForgeMod.SWIM_SPEED), 0.0D));
     }
 
     /**
      * Performs what to do when an entity attempts to go down or "sink" in a fluid.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      */
-    default void sinkInFluid(FluidType type) {
+    default void sinkInFluid(Fluid fluid) {
         self().setDeltaMovement(self().getDeltaMovement().add(0.0D, (double) -0.04F * self().getAttributeValue(NeoForgeMod.SWIM_SPEED), 0.0D));
     }
 
     /**
      * Returns whether the entity can drown in the fluid.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      * @return {@code true} if the entity can drown in the fluid, {@code false} otherwise
      */
-    default boolean canDrownInFluidType(FluidType type) {
-        if (type == NeoForgeMod.WATER_TYPE.value()) return !self().canBreatheUnderwater();
-        return type.canDrownIn(self());
+    default boolean canDrownInFluid(Fluid fluid) {
+        if (fluid.is(FluidTags.WATER)) return !self().canBreatheUnderwater();
+        return fluid.canDrownIn(self());
     }
 
     /**

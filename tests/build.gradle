@@ -68,6 +68,7 @@ runs {
                 '--mod', 'structure_modifiers_test',
                 '--mod', 'custom_preset_editor_test',
                 '--mod', 'custom_predicate_test',
+                '--mod', 'fluid_type_test',
                 '--mod', 'neotests',
                 '--existing-mod', 'testframework',
                 '--existing', sourceSets.main.resources.srcDirs[0].absolutePath

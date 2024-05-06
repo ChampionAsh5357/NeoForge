@@ -126,8 +126,8 @@
      }
  
 +    @Override
-+    public void jumpInFluid(net.neoforged.neoforge.fluids.FluidType type) {
-+        this.jumpInLiquidInternal(() -> super.jumpInFluid(type));
++    public void jumpInFluid(Fluid fluid) {
++        this.jumpInLiquidInternal(() -> super.jumpInFluid(fluid));
 +    }
 +
      @VisibleForTesting

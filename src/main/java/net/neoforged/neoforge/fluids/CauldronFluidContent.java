@@ -18,6 +18,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.neoforged.fml.ModLoader;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.common.extensions.IFluidExtension;
 import net.neoforged.neoforge.fluids.capability.wrappers.CauldronWrapper;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
@@ -108,9 +109,9 @@ public final class CauldronFluidContent {
     public static void init() {
         var registerEvent = new RegisterCauldronFluidContentEvent();
         // Vanilla registrations
-        registerEvent.register(Blocks.CAULDRON, Fluids.EMPTY, FluidType.BUCKET_VOLUME, null);
-        registerEvent.register(Blocks.WATER_CAULDRON, Fluids.WATER, FluidType.BUCKET_VOLUME, LayeredCauldronBlock.LEVEL);
-        registerEvent.register(Blocks.LAVA_CAULDRON, Fluids.LAVA, FluidType.BUCKET_VOLUME, null);
+        registerEvent.register(Blocks.CAULDRON, Fluids.EMPTY, IFluidExtension.BUCKET_VOLUME, null);
+        registerEvent.register(Blocks.WATER_CAULDRON, Fluids.WATER, IFluidExtension.BUCKET_VOLUME, LayeredCauldronBlock.LEVEL);
+        registerEvent.register(Blocks.LAVA_CAULDRON, Fluids.LAVA, IFluidExtension.BUCKET_VOLUME, null);
         // Modded registrations
         ModLoader.postEvent(registerEvent);
     }

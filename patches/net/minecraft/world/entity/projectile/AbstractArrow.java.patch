@@ -5,7 +5,7 @@
          }
  
 -        if (this.isInWaterOrRain() || blockstate.is(Blocks.POWDER_SNOW)) {
-+        if (this.isInWaterOrRain() || blockstate.is(Blocks.POWDER_SNOW) || this.isInFluidType((fluidType, height) -> this.canFluidExtinguish(fluidType))) {
++        if (this.isInWaterOrRain() || blockstate.is(Blocks.POWDER_SNOW) || this.isInFluid((fluid, height) -> this.canFluidExtinguish(fluid))) {
              this.clearFire();
          }
  

@@ -53,7 +53,7 @@
          }
  
 -        if (this.isAlive() && (this.isInWaterRainOrBubble() || this.isInPowderSnow)) {
-+        if (this.isAlive() && (this.isInWaterRainOrBubble() || this.isInPowderSnow || this.isInFluidType((fluidType, height) -> this.canFluidExtinguish(fluidType)))) {
++        if (this.isAlive() && (this.isInWaterRainOrBubble() || this.isInPowderSnow || this.isInFluid((fluid, height) -> this.canFluidExtinguish(fluid)))) {
              this.extinguishFire();
          }
  
@@ -380,7 +380,7 @@
 +    @Deprecated // FORGE: use sinkInFluid instead
      protected void goDownInWater() {
 -        this.setDeltaMovement(this.getDeltaMovement().add(0.0, -0.04F, 0.0));
-+        this.sinkInFluid(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
++        this.sinkInFluid(net.minecraft.world.level.material.Fluids.WATER);
      }
  
 +    @Deprecated // FORGE: use jumpInFluid instead
@@ -395,8 +395,8 @@
  
              FluidState fluidstate = this.level().getFluidState(this.blockPosition());
 -            if (this.isInWater() && this.isAffectedByFluids() && !this.canStandOnFluid(fluidstate)) {
-+            if ((this.isInWater() || (this.isInFluidType(fluidstate) && fluidstate.getFluidType() != net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value())) && this.isAffectedByFluids() && !this.canStandOnFluid(fluidstate)) {
-+                if (this.isInWater() || (this.isInFluidType(fluidstate) && !this.moveInFluid(fluidstate, p_21280_, d0))) {
++            if ((this.isInWater() || (this.isInFluid(fluidstate) && !fluidstate.is(FluidTags.LAVA))) && this.isAffectedByFluids() && !this.canStandOnFluid(fluidstate)) {
++                if (this.isInWater() || (this.isInFluid(fluidstate) && !this.moveInFluid(fluidstate, p_21280_, d0))) {
                  double d9 = this.getY();
                  float f4 = this.isSprinting() ? 0.9F : this.getWaterSlowDown();
                  float f5 = 0.02F;
@@ -446,8 +446,8 @@
          this.level().getProfiler().push("jump");
          if (this.jumping && this.isAffectedByFluids()) {
              double d3;
-+            net.neoforged.neoforge.fluids.FluidType fluidType = this.getMaxHeightFluidType();
-+            if (!fluidType.isAir()) d3 = this.getFluidTypeHeight(fluidType);
++            Fluid fluid = this.getMaxHeightFluid();
++            if (!fluid.isAir()) d3 = this.getFluidHeight(fluid);
 +            else
              if (this.isInLava()) {
                  d3 = this.getFluidHeight(FluidTags.LAVA);
@@ -456,19 +456,19 @@
              double d4 = this.getFluidJumpThreshold();
              if (!flag || this.onGround() && !(d3 > d4)) {
                  if (!this.isInLava() || this.onGround() && !(d3 > d4)) {
-+                    if (fluidType.isAir() || this.onGround() && !(d3 > d4)) {
++                    if (fluid.isAir() || this.onGround() && !(d3 > d4)) {
                      if ((this.onGround() || flag && d3 <= d4) && this.noJumpDelay == 0) {
                          this.jumpFromGround();
                          this.noJumpDelay = 10;
                      }
-+                    } else this.jumpInFluid(fluidType);
++                    } else this.jumpInFluid(fluid);
                  } else {
 -                    this.jumpInLiquid(FluidTags.LAVA);
-+                    this.jumpInFluid(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
++                    this.jumpInFluid(fluid);
                  }
              } else {
 -                this.jumpInLiquid(FluidTags.WATER);
-+                this.jumpInFluid(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
++                this.jumpInFluid(fluid);
              }
          } else {
              this.noJumpDelay = 0;

@@ -11,8 +11,8 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.material.Fluids;
+import net.neoforged.neoforge.common.extensions.IFluidExtension;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.fluids.SimpleFluidContent;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.templates.FluidHandlerItemStack;
@@ -44,7 +44,7 @@ public class FluidTemplatesTests {
     @TestHolder(description = "Tests that FluidHandlerItemStack works")
     public static void testFluidHandlerItemStack(ExtendedGameTestHelper helper) {
         ItemStack stack = Items.APPLE.getDefaultInstance();
-        int capacity = 2 * FluidType.BUCKET_VOLUME;
+        int capacity = 2 * IFluidExtension.BUCKET_VOLUME;
         var fluidHandler = new FluidHandlerItemStack(SIMPLE_FLUID_CONTENT, stack, capacity);
 
         if (fluidHandler.getTanks() != 1) {
@@ -60,19 +60,19 @@ public class FluidTemplatesTests {
             helper.fail("Expected no fluid stack component");
         }
 
-        var waterStack = new FluidStack(Fluids.WATER, FluidType.BUCKET_VOLUME);
-        if (fluidHandler.fill(waterStack, IFluidHandler.FluidAction.EXECUTE) != FluidType.BUCKET_VOLUME) {
+        var waterStack = new FluidStack(Fluids.WATER, IFluidExtension.BUCKET_VOLUME);
+        if (fluidHandler.fill(waterStack, IFluidHandler.FluidAction.EXECUTE) != IFluidExtension.BUCKET_VOLUME) {
             helper.fail("Expected to be able to fill a bucket of water");
         }
         if (!stack.has(SIMPLE_FLUID_CONTENT)) {
             helper.fail("Expected fluid stack component");
         }
-        if (fluidHandler.getFluidInTank(0).getAmount() != FluidType.BUCKET_VOLUME) {
+        if (fluidHandler.getFluidInTank(0).getAmount() != IFluidExtension.BUCKET_VOLUME) {
             helper.fail("Expected a bucket of water");
         }
 
-        var drained = fluidHandler.drain(FluidType.BUCKET_VOLUME, IFluidHandler.FluidAction.EXECUTE);
-        if (!FluidStack.matches(drained, new FluidStack(Fluids.WATER, FluidType.BUCKET_VOLUME))) {
+        var drained = fluidHandler.drain(IFluidExtension.BUCKET_VOLUME, IFluidHandler.FluidAction.EXECUTE);
+        if (!FluidStack.matches(drained, new FluidStack(Fluids.WATER, IFluidExtension.BUCKET_VOLUME))) {
             helper.fail("Expected to drain a bucket of water");
         }
         if (fluidHandler.getFluidInTank(0).getAmount() != 0) {

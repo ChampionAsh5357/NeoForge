@@ -35,7 +35,6 @@ import org.jetbrains.annotations.Nullable;
  * @see Source
  */
 public abstract class BaseFlowingFluid extends FlowingFluid {
-    private final Supplier<? extends FluidType> fluidType;
     private final Supplier<? extends Fluid> flowing;
     private final Supplier<? extends Fluid> still;
     @Nullable
@@ -48,7 +47,6 @@ public abstract class BaseFlowingFluid extends FlowingFluid {
     private final int tickRate;
 
     protected BaseFlowingFluid(Properties properties) {
-        this.fluidType = properties.fluidType;
         this.flowing = properties.flowing;
         this.still = properties.still;
         this.bucket = properties.bucket;
@@ -57,11 +55,6 @@ public abstract class BaseFlowingFluid extends FlowingFluid {
         this.levelDecreasePerBlock = properties.levelDecreasePerBlock;
         this.explosionResistance = properties.explosionResistance;
         this.tickRate = properties.tickRate;
-    }
-
-    @Override
-    public FluidType getFluidType() {
-        return this.fluidType.get();
     }
 
     @Override
@@ -77,11 +70,6 @@ public abstract class BaseFlowingFluid extends FlowingFluid {
     @Override
     protected boolean canConvertToSource(Level level) {
         return false;
-    }
-
-    @Override
-    public boolean canConvertToSource(FluidState state, Level level, BlockPos pos) {
-        return this.getFluidType().canConvertToSource(state, level, pos);
     }
 
     @Override
@@ -135,7 +123,7 @@ public abstract class BaseFlowingFluid extends FlowingFluid {
 
     @Override
     public Optional<SoundEvent> getPickupSound() {
-        return Optional.ofNullable(getFluidType().getSound(SoundActions.BUCKET_FILL));
+        return Optional.ofNullable(this.getSound(SoundActions.BUCKET_FILL));
     }
 
     public static class Flowing extends BaseFlowingFluid {
@@ -173,7 +161,6 @@ public abstract class BaseFlowingFluid extends FlowingFluid {
     }
 
     public static class Properties {
-        private Supplier<? extends FluidType> fluidType;
         private Supplier<? extends Fluid> still;
         private Supplier<? extends Fluid> flowing;
         private Supplier<? extends Item> bucket;
@@ -183,8 +170,7 @@ public abstract class BaseFlowingFluid extends FlowingFluid {
         private float explosionResistance = 1;
         private int tickRate = 5;
 
-        public Properties(Supplier<? extends FluidType> fluidType, Supplier<? extends Fluid> still, Supplier<? extends Fluid> flowing) {
-            this.fluidType = fluidType;
+        public Properties(Supplier<? extends Fluid> still, Supplier<? extends Fluid> flowing) {
             this.still = still;
             this.flowing = flowing;
         }

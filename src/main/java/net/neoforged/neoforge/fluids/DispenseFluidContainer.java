@@ -13,6 +13,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.DispenserBlock;
+import net.neoforged.neoforge.common.extensions.IFluidExtension;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 
@@ -76,7 +77,7 @@ public class DispenseFluidContainer extends DefaultDispenseItemBehavior {
             return super.execute(source, stack);
         }
 
-        FluidStack fluidStack = fluidHandler.drain(FluidType.BUCKET_VOLUME, IFluidHandler.FluidAction.EXECUTE);
+        FluidStack fluidStack = fluidHandler.drain(IFluidExtension.BUCKET_VOLUME, IFluidHandler.FluidAction.EXECUTE);
         Direction dispenserFacing = source.state().getValue(DispenserBlock.FACING);
         BlockPos blockpos = source.pos().relative(dispenserFacing);
         FluidActionResult result = FluidUtil.tryPlaceFluid(null, source.level(), InteractionHand.MAIN_HAND, blockpos, stack, fluidStack);

@@ -31,7 +31,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.client.ClientHooks;
 import net.neoforged.neoforge.client.NeoForgeRenderTypes;
 import net.neoforged.neoforge.client.RenderTypeGroup;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidExtensions;
 import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
@@ -89,7 +89,7 @@ public class DynamicFluidContainerModel implements IUnbakedGeometry<DynamicFluid
         Material coverLocation = context.hasMaterial("cover") ? context.getMaterial("cover") : null;
 
         TextureAtlasSprite baseSprite = baseLocation != null ? spriteGetter.apply(baseLocation) : null;
-        TextureAtlasSprite fluidSprite = fluid != Fluids.EMPTY ? spriteGetter.apply(ClientHooks.getBlockMaterial(IClientFluidTypeExtensions.of(fluid).getStillTexture())) : null;
+        TextureAtlasSprite fluidSprite = fluid != Fluids.EMPTY ? spriteGetter.apply(ClientHooks.getBlockMaterial(IClientFluidExtensions.of(fluid).getStillTexture())) : null;
         TextureAtlasSprite coverSprite = (coverLocation != null && (!coverIsMask || baseLocation != null)) ? spriteGetter.apply(coverLocation) : null;
 
         TextureAtlasSprite particleSprite = particleLocation != null ? spriteGetter.apply(particleLocation) : null;
@@ -99,7 +99,7 @@ public class DynamicFluidContainerModel implements IUnbakedGeometry<DynamicFluid
         if (particleSprite == null && !coverIsMask) particleSprite = coverSprite;
 
         // If the fluid is lighter than air, rotate 180deg to turn it upside down
-        if (flipGas && fluid != Fluids.EMPTY && fluid.getFluidType().isLighterThanAir()) {
+        if (flipGas && fluid != Fluids.EMPTY && fluid.isLighterThanAir()) {
             modelState = new SimpleModelState(
                     modelState.getRotation().compose(
                             new Transformation(null, new Quaternionf(0, 0, 1, 0), null, null)));
@@ -126,7 +126,7 @@ public class DynamicFluidContainerModel implements IUnbakedGeometry<DynamicFluid
                 var unbaked = UnbakedGeometryHelper.createUnbakedItemMaskElements(1, templateSprite); // Use template as mask
                 var quads = UnbakedGeometryHelper.bakeElements(unbaked, $ -> fluidSprite, transformedState, modelLocation); // Bake with fluid texture
 
-                var emissive = applyFluidLuminosity && fluid.getFluidType().getLightLevel() > 0;
+                var emissive = applyFluidLuminosity && fluid.getLightLevel() > 0;
                 var renderTypes = getLayerRenderTypes(emissive);
                 if (emissive) QuadTransformers.settingMaxEmissivity().processInPlace(quads);
 
@@ -215,7 +215,7 @@ public class DynamicFluidContainerModel implements IUnbakedGeometry<DynamicFluid
         public int getColor(ItemStack stack, int tintIndex) {
             if (tintIndex != 1) return 0xFFFFFFFF;
             return FluidUtil.getFluidContained(stack)
-                    .map(fluidStack -> IClientFluidTypeExtensions.of(fluidStack.getFluid()).getTintColor(fluidStack))
+                    .map(fluidStack -> IClientFluidExtensions.of(fluidStack.getFluid()).getTintColor(fluidStack))
                     .orElse(0xFFFFFFFF);
         }
     }

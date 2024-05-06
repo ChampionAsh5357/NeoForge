@@ -5,49 +5,35 @@
 
 package net.neoforged.neoforge.oldtest.fluid;
 
-import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.*;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DispenserBlock;
-import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.material.FlowingFluid;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
-import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.level.material.*;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidExtensions;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.DispenseFluidContainer;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.apache.commons.lang3.Validate;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Consumer;
 
 @Mod(NewFluidTest.MODID)
 public class NewFluidTest {
@@ -60,18 +46,43 @@ public class NewFluidTest {
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-    public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, MODID);
     public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(BuiltInRegistries.FLUID, MODID);
 
     private static BaseFlowingFluid.Properties makeProperties() {
-        return new BaseFlowingFluid.Properties(test_fluid_type, test_fluid, test_fluid_flowing)
+        return new BaseFlowingFluid.Properties(test_fluid, test_fluid_flowing)
                 .bucket(TEST_FLUID_BUCKET).block(test_fluid_block);
     }
 
-    public static DeferredHolder<FluidType, FluidType> test_fluid_type = FLUID_TYPES.register("test_fluid", () -> new FluidType(FluidType.Properties.create()) {
+    public static DeferredHolder<Fluid, FlowingFluid> test_fluid = FLUIDS.register("test_fluid", () -> new BaseFlowingFluid.Source(makeProperties()) {
         @Override
-        public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-            consumer.accept(new IClientFluidTypeExtensions() {
+        public void initializeClient(Consumer<IClientFluidExtensions> consumer) {
+            consumer.accept(new IClientFluidExtensions() {
+                @Override
+                public ResourceLocation getStillTexture() {
+                    return FLUID_STILL;
+                }
+
+                @Override
+                public ResourceLocation getFlowingTexture() {
+                    return FLUID_FLOWING;
+                }
+
+                @Override
+                public ResourceLocation getOverlayTexture() {
+                    return FLUID_OVERLAY;
+                }
+
+                @Override
+                public int getTintColor() {
+                    return 0x3F1080FF;
+                }
+            });
+        }
+    });
+    public static DeferredHolder<Fluid, FlowingFluid> test_fluid_flowing = FLUIDS.register("test_fluid_flowing", () -> new BaseFlowingFluid.Flowing(makeProperties()) {
+        @Override
+        public void initializeClient(Consumer<IClientFluidExtensions> consumer) {
+            consumer.accept(new IClientFluidExtensions() {
                 @Override
                 public ResourceLocation getStillTexture() {
                     return FLUID_STILL;
@@ -95,9 +106,6 @@ public class NewFluidTest {
         }
     });
 
-    public static DeferredHolder<Fluid, FlowingFluid> test_fluid = FLUIDS.register("test_fluid", () -> new BaseFlowingFluid.Source(makeProperties()));
-    public static DeferredHolder<Fluid, FlowingFluid> test_fluid_flowing = FLUIDS.register("test_fluid_flowing", () -> new BaseFlowingFluid.Flowing(makeProperties()));
-
     public static DeferredBlock<LiquidBlock> test_fluid_block = BLOCKS.register("test_fluid_block", () -> new LiquidBlock(test_fluid.value(), Properties.of().noCollission().strength(100.0F).noLootTable()));
     public static DeferredItem<Item> TEST_FLUID_BUCKET = ITEMS.register("test_fluid_bucket", () -> new BucketItem(test_fluid.value(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
@@ -111,7 +119,6 @@ public class NewFluidTest {
 
             BLOCKS.register(modEventBus);
             ITEMS.register(modEventBus);
-            FLUID_TYPES.register(modEventBus);
             FLUIDS.register(modEventBus);
             modEventBus.addListener(this::addCreative);
         }
@@ -127,9 +134,9 @@ public class NewFluidTest {
     public void loadComplete(FMLLoadCompleteEvent event) {
         // some sanity checks
         BlockState state = Fluids.WATER.defaultFluidState().createLegacyBlock();
-        BlockState state2 = Fluids.WATER.getFluidType().getBlockForFluidState(null, null, Fluids.WATER.defaultFluidState());
+        BlockState state2 = Fluids.WATER.getBlockForFluidState(null, null, Fluids.WATER.defaultFluidState());
         Validate.isTrue(state.getBlock() == Blocks.WATER && state2 == state);
-        ItemStack stack = Fluids.WATER.getFluidType().getBucket(new FluidStack(Fluids.WATER, 1));
+        ItemStack stack = Fluids.WATER.getBucket(new FluidStack(Fluids.WATER, 1));
         Validate.isTrue(stack.getItem() == Fluids.WATER.getBucket());
         event.enqueueWork(() -> DispenserBlock.registerBehavior(TEST_FLUID_BUCKET.get(), DispenseFluidContainer.getInstance()));
     }

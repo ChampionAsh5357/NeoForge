@@ -50,7 +50,7 @@
          @Override
          public boolean canUse() {
 -            return Fox.this.isInWater() && Fox.this.getFluidHeight(FluidTags.WATER) > 0.25 || Fox.this.isInLava();
-+            return Fox.this.isInWater() && Fox.this.getFluidHeight(FluidTags.WATER) > 0.25D || Fox.this.isInLava() || Fox.this.isInFluidType((fluidType, height) -> Fox.this.canSwimInFluidType(fluidType) && height > 0.25D);
++            return Fox.this.isInWater() && Fox.this.getFluidHeight(FluidTags.WATER) > 0.25D || Fox.this.isInLava() || Fox.this.isInFluid((fluid, height) -> Fox.this.canSwimInFluid(fluid) && height > 0.25D);
          }
      }
  

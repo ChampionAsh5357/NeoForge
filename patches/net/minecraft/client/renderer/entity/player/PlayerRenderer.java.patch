@@ -41,7 +41,7 @@
          } else if (f > 0.0F) {
              super.setupRotations(p_117802_, p_117803_, p_117804_, p_117805_, p_117806_, p_320048_);
 -            float f4 = p_117802_.isInWater() ? -90.0F - f1 : -90.0F;
-+            float f4 = p_117802_.isInWater() || p_117802_.isInFluidType((fluidType, height) -> p_117802_.canSwimInFluidType(fluidType)) ? -90.0F - p_117802_.getXRot() : -90.0F;
++            float f4 = p_117802_.isInWater() || p_117802_.isInFluid((fluid, height) -> p_117802_.canSwimInFluid(fluid)) ? -90.0F - p_117802_.getXRot() : -90.0F;
              float f5 = Mth.lerp(f, 0.0F, f4);
              p_117803_.mulPose(Axis.XP.rotationDegrees(f5));
              if (p_117802_.isVisuallySwimming()) {

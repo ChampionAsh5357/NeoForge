@@ -19,7 +19,7 @@
 +                if (!net.neoforged.neoforge.client.ClientHooks.renderWaterOverlay(player, p_110720_))
                  renderWater(p_110719_, p_110720_);
              }
-+            else if (!player.getEyeInFluidType().isAir()) net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions.of(player.getEyeInFluidType()).renderOverlay(p_110719_, p_110720_);
++            else if (!player.getEyeInFluid().isAir()) net.neoforged.neoforge.client.extensions.common.IClientFluidExtensions.of(player.getEyeInFluid()).renderOverlay(p_110719_, p_110720_);
  
              if (p_110719_.player.isOnFire()) {
 +                if (!net.neoforged.neoforge.client.ClientHooks.renderFireOverlay(player, p_110720_))

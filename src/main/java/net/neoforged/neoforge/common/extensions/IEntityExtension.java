@@ -5,9 +5,6 @@
 
 package net.neoforged.neoforge.common.extensions;
 
-import java.util.Collection;
-import java.util.function.BiPredicate;
-import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -22,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.neoforge.attachment.AttachmentInternals;
@@ -30,9 +28,12 @@ import net.neoforged.neoforge.common.SoundAction;
 import net.neoforged.neoforge.common.util.INBTSerializable;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import net.neoforged.neoforge.entity.PartEntity;
-import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.network.payload.AdvancedAddEntityPayload;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 public interface IEntityExtension extends INBTSerializable<CompoundTag> {
     private Entity self() {
@@ -100,13 +101,13 @@ public interface IEntityExtension extends INBTSerializable<CompoundTag> {
     /**
      * Returns whether the entity can ride in this vehicle under the fluid.
      *
-     * @param type  the type of the fluid
+     * @param fluid  the fluid
      * @param rider the entity riding the vehicle
      * @return {@code true} if the vehicle can be ridden in under this fluid,
      *         {@code false} otherwise
      */
-    default boolean canBeRiddenUnderFluidType(FluidType type, Entity rider) {
-        return type.canRideVehicleUnder(self(), rider);
+    default boolean canBeRiddenUnderFluid(Fluid fluid, Entity rider) {
+        return fluid.canRideVehicleUnder(self(), rider);
     }
 
     /**
@@ -191,91 +192,91 @@ public interface IEntityExtension extends INBTSerializable<CompoundTag> {
     }
 
     /**
-     * Returns the height of the fluid type in relation to the bounding box of
-     * the entity. If the entity is not in the fluid type, then {@code 0}
+     * Returns the height of the fluid in relation to the bounding box of
+     * the entity. If the entity is not in the fluid, then {@code 0}
      * is returned.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      * @return the height of the fluid compared to the entity
      */
-    double getFluidTypeHeight(FluidType type);
+    double getFluidHeight(Fluid fluid);
 
     /**
-     * Returns the fluid type which is the highest on the bounding box of
+     * Returns the fluid which is the highest on the bounding box of
      * the entity.
      *
-     * @return the fluid type which is the highest on the bounding box of
+     * @return the fluid which is the highest on the bounding box of
      *         the entity
      */
-    FluidType getMaxHeightFluidType();
+    Fluid getMaxHeightFluid();
 
     /**
-     * Returns whether the entity is within the fluid type of the state.
+     * Returns whether the entity is within the fluid of the state.
      *
      * @param state the state of the fluid
-     * @return {@code true} if the entity is within the fluid type of the
+     * @return {@code true} if the entity is within the fluid of the
      *         state, {@code false} otherwise
      */
-    default boolean isInFluidType(FluidState state) {
-        return this.isInFluidType(state.getFluidType());
+    default boolean isInFluid(FluidState state) {
+        return this.isInFluid(state.getType());
     }
 
     /**
-     * Returns whether the entity is within the fluid type.
+     * Returns whether the entity is within the fluid.
      *
-     * @param type the type of the fluid
-     * @return {@code true} if the entity is within the fluid type,
+     * @param fluid the fluid
+     * @return {@code true} if the entity is within the fluid,
      *         {@code false} otherwise
      */
-    default boolean isInFluidType(FluidType type) {
-        return this.getFluidTypeHeight(type) > 0.0D;
+    default boolean isInFluid(Fluid fluid) {
+        return this.getFluidHeight(fluid) > 0.0D;
     }
 
     /**
-     * Returns whether any fluid type the entity is currently in matches
+     * Returns whether any fluid the entity is currently in matches
      * the specified condition.
      *
-     * @param predicate a test taking in the fluid type and its height
-     * @return {@code true} if a fluid type meets the condition, {@code false}
+     * @param predicate a test taking in the fluid and its height
+     * @return {@code true} if a fluid meets the condition, {@code false}
      *         otherwise
      */
-    default boolean isInFluidType(BiPredicate<FluidType, Double> predicate) {
-        return isInFluidType(predicate, false);
+    default boolean isInFluid(BiPredicate<Fluid, Double> predicate) {
+        return isInFluid(predicate, false);
     }
 
     /**
-     * Returns whether the fluid type the entity is currently in matches
+     * Returns whether the fluid the entity is currently in matches
      * the specified condition.
      *
-     * @param predicate   a test taking in the fluid type and its height
-     * @param forAllTypes {@code true} if all fluid types should match the
+     * @param predicate   a test taking in the fluid and its height
+     * @param forAllTypes {@code true} if all fluid should match the
      *                    condition instead of at least one
-     * @return {@code true} if a fluid type meets the condition, {@code false}
+     * @return {@code true} if a fluid meets the condition, {@code false}
      *         otherwise
      */
-    boolean isInFluidType(BiPredicate<FluidType, Double> predicate, boolean forAllTypes);
+    boolean isInFluid(BiPredicate<Fluid, Double> predicate, boolean forAllTypes);
 
     /**
      * Returns whether the entity is in a fluid.
      *
      * @return {@code true} if the entity is in a fluid, {@code false} otherwise
      */
-    boolean isInFluidType();
+    boolean isInFluid();
 
     /**
      * Returns the fluid that is on the entity's eyes.
      *
      * @return the fluid that is on the entity's eyes
      */
-    FluidType getEyeInFluidType();
+    Fluid getEyeInFluid();
 
     /**
      * Returns whether the fluid is on the entity's eyes.
      *
      * @return {@code true} if the fluid is on the entity's eyes, {@code false} otherwise
      */
-    default boolean isEyeInFluidType(FluidType type) {
-        return type == this.getEyeInFluidType();
+    default boolean isEyeInFluid(Fluid fluid) {
+        return fluid == this.getEyeInFluid();
     }
 
     /**
@@ -284,48 +285,48 @@ public interface IEntityExtension extends INBTSerializable<CompoundTag> {
      * @return {@code true} if the entity can start swimming, {@code false} otherwise
      */
     default boolean canStartSwimming() {
-        return !this.getEyeInFluidType().isAir() && this.canSwimInFluidType(this.getEyeInFluidType()) && this.canSwimInFluidType(this.self().level().getFluidState(this.self().blockPosition()).getFluidType());
+        return !this.getEyeInFluid().isAir() && this.canSwimInFluid(this.getEyeInFluid()) && this.canSwimInFluid(this.self().level().getFluidState(this.self().blockPosition()).getType());
     }
 
     /**
      * Returns how much the velocity of the fluid should be scaled by
      * when applied to an entity.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      * @return a scalar to multiply to the fluid velocity
      */
-    default double getFluidMotionScale(FluidType type) {
-        return type.motionScale(self());
+    default double getFluidMotionScale(Fluid fluid) {
+        return fluid.motionScale(self());
     }
 
     /**
      * Returns whether the fluid can push an entity.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      * @return {@code true} if the entity can be pushed by the fluid, {@code false} otherwise
      */
-    default boolean isPushedByFluid(FluidType type) {
-        return self().isPushedByFluid() && type.canPushEntity(self());
+    default boolean isPushedByFluid(Fluid fluid) {
+        return self().isPushedByFluid() && fluid.canPushEntity(self());
     }
 
     /**
      * Returns whether the entity can swim in the fluid.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      * @return {@code true} if the entity can swim in the fluid, {@code false} otherwise
      */
-    default boolean canSwimInFluidType(FluidType type) {
-        return type.canSwim(self());
+    default boolean canSwimInFluid(Fluid fluid) {
+        return fluid.canSwim(self());
     }
 
     /**
      * Returns whether the entity can be extinguished by this fluid.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      * @return {@code true} if the entity can be extinguished, {@code false} otherwise
      */
-    default boolean canFluidExtinguish(FluidType type) {
-        return type.canExtinguish(self());
+    default boolean canFluidExtinguish(Fluid fluid) {
+        return fluid.canExtinguish(self());
     }
 
     /**
@@ -335,11 +336,11 @@ public interface IEntityExtension extends INBTSerializable<CompoundTag> {
      * <p>Implementation: If the entity is in many fluids, the smallest modifier
      * is applied.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      * @return a scalar to multiply to the fall damage
      */
-    default float getFluidFallDistanceModifier(FluidType type) {
-        return type.getFallDistanceModifier(self());
+    default float getFluidFallDistanceModifier(Fluid fluid) {
+        return fluid.getFallDistanceModifier(self());
     }
 
     /**
@@ -347,12 +348,12 @@ public interface IEntityExtension extends INBTSerializable<CompoundTag> {
      *
      * <p>Hydration is an arbitrary word which depends on the entity.
      *
-     * @param type the type of the fluid
+     * @param fluid the fluid
      * @return {@code true} if the entity can be hydrated, {@code false}
      *         otherwise
      */
-    default boolean canHydrateInFluidType(FluidType type) {
-        return type.canHydrate(self());
+    default boolean canHydrateInFluid(Fluid fluid) {
+        return fluid.canHydrate(self());
     }
 
     /**
@@ -360,13 +361,13 @@ public interface IEntityExtension extends INBTSerializable<CompoundTag> {
      * entity in the fluid. If no sound is present, then the sound will be
      * {@code null}.
      *
-     * @param type   the type of the fluid
+     * @param fluid   the fluid
      * @param action the action being performed
      * @return the sound to play when performing the action
      */
     @Nullable
-    default SoundEvent getSoundFromFluidType(FluidType type, SoundAction action) {
-        return type.getSound(self(), action);
+    default SoundEvent getSoundFromFluid(Fluid fluid, SoundAction action) {
+        return fluid.getSound(self(), action);
     }
 
     /**

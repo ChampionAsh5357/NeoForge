@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/level/material/WaterFluid.java
++++ b/net/minecraft/world/level/material/WaterFluid.java
+@@ -25,7 +_,7 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.block.state.StateDefinition;
+ 
+-public abstract class WaterFluid extends FlowingFluid {
++public abstract class WaterFluid extends FlowingFluid implements net.neoforged.neoforge.common.extensions.IWaterFluidExtension {
+     @Override
+     public Fluid getFlowing() {
+         return Fluids.FLOWING_WATER;

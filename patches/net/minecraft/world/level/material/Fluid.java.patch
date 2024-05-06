@@ -9,17 +9,38 @@
      public static final IdMapper<FluidState> FLUID_STATE_REGISTRY = new IdMapper<>();
      protected final StateDefinition<Fluid, FluidState> stateDefinition;
      private FluidState defaultFluidState;
-@@ -100,6 +_,13 @@
+@@ -31,6 +_,7 @@
+         this.createFluidStateDefinition(builder);
+         this.stateDefinition = builder.create(Fluid::defaultFluidState, FluidState::new);
+         this.registerDefaultState(this.stateDefinition.any());
++        this.initClient();
      }
  
-     public abstract VoxelShape getShape(FluidState p_76137_, BlockGetter p_76138_, BlockPos p_76139_);
-+
-+    private net.neoforged.neoforge.fluids.FluidType forgeFluidType;
-+    @Override
-+    public net.neoforged.neoforge.fluids.FluidType getFluidType() {
-+        if (forgeFluidType == null) forgeFluidType = net.neoforged.neoforge.common.CommonHooks.getVanillaFluidType(this);
-+        return forgeFluidType;
+     protected void createFluidStateDefinition(StateDefinition.Builder<Fluid, FluidState> p_76121_) {
+@@ -108,5 +_,26 @@
+     @Deprecated
+     public Holder.Reference<Fluid> builtInRegistryHolder() {
+         return this.builtInRegistryHolder;
 +    }
- 
-     public Optional<SoundEvent> getPickupSound() {
-         return Optional.empty();
++
++    private Object renderProperties;
++
++    /*
++       DO NOT CALL, IT WILL DISAPPEAR IN THE FUTURE
++       Call RenderProperties.get instead
++     */
++    public Object getRenderPropertiesInternal() {
++        return renderProperties;
++    }
++
++    private void initClient() {
++        // Minecraft instance isn't available in datagen, so don't call initializeClient if in datagen
++        if (net.neoforged.fml.loading.FMLEnvironment.dist == net.neoforged.api.distmarker.Dist.CLIENT && net.neoforged.neoforge.data.loading.DatagenModLoader.isRunningDataGen()) {
++            initializeClient(properties -> {
++                if (properties == this)
++                    throw new IllegalStateException("Don't extend IClientFluidExtensions in your fluid, use an anonymous class instead.");
++                this.renderProperties = properties;
++            });
++        }
+     }
+ }

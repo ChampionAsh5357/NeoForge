@@ -16,7 +16,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.fluids.FluidType;
 import org.jetbrains.annotations.Nullable;
 
 public interface IFluidStateExtension {
@@ -34,15 +33,6 @@ public interface IFluidStateExtension {
      */
     default float getExplosionResistance(BlockGetter level, BlockPos pos, Explosion explosion) {
         return self().getType().getExplosionResistance(self(), level, pos, explosion);
-    }
-
-    /**
-     * Returns the type of this fluid.
-     *
-     * @return the type of this fluid
-     */
-    default FluidType getFluidType() {
-        return self().getType().getFluidType();
     }
 
     /**

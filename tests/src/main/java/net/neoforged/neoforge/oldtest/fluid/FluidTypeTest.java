@@ -8,8 +8,6 @@ package net.neoforged.neoforge.oldtest.fluid;
 import com.mojang.blaze3d.shaders.FogShape;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -17,11 +15,16 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.data.tags.FluidTagsProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -34,27 +37,35 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
-import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.extensions.common.IClientFluidExtensions;
 import net.neoforged.neoforge.client.model.pipeline.VertexConsumerWrapper;
 import net.neoforged.neoforge.common.NeoForgeMod;
+import net.neoforged.neoforge.common.SoundAction;
+import net.neoforged.neoforge.common.SoundActions;
+import net.neoforged.neoforge.common.extensions.IFluidExtension;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.fluids.BaseFlowingFluid;
 import net.neoforged.neoforge.fluids.FluidInteractionRegistry;
-import net.neoforged.neoforge.fluids.FluidType;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
-import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
+
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * A test case used to define and test fluid type integration into fluids.
@@ -76,21 +87,49 @@ public class FluidTypeTest {
     protected static final String ID = "fluid_type_test";
     private static Logger logger;
 
-    private static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(NeoForgeRegistries.Keys.FLUID_TYPES, ID);
     private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(BuiltInRegistries.FLUID, ID);
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(ID);
     private static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(ID);
 
     private static BaseFlowingFluid.Properties fluidProperties() {
-        return new BaseFlowingFluid.Properties(TEST_FLUID_TYPE::value, TEST_FLUID, TEST_FLUID_FLOWING)
+        return new BaseFlowingFluid.Properties(TEST_FLUID, TEST_FLUID_FLOWING)
                 .block(TEST_FLUID_BLOCK)
                 .bucket(TEST_FLUID_BUCKET);
     }
 
-    private static final Holder<FluidType> TEST_FLUID_TYPE = FLUID_TYPES.register("test_fluid", () -> new FluidType(FluidType.Properties.create().supportsBoating(true).canHydrate(true).addDripstoneDripping(0.25F, ParticleTypes.SCULK_SOUL, Blocks.POWDER_SNOW_CAULDRON, SoundEvents.END_PORTAL_SPAWN)) {
+    private static final TagKey<Fluid> TEST_FLUID_TAG = FluidTags.create(new ResourceLocation(ID, "test_fluid"));
+
+    private interface TestFluid extends IFluidExtension {
+
+        DripstoneDripInfo DRIP_INFO = new DripstoneDripInfo(0.25F, ParticleTypes.SCULK_SOUL, Blocks.POWDER_SNOW_CAULDRON);
+        Map<SoundAction, SoundEvent> SOUNDS = Map.of(
+                SoundActions.CAULDRON_DRIP, SoundEvents.END_PORTAL_SPAWN
+        );
+
         @Override
-        public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-            consumer.accept(new IClientFluidTypeExtensions() {
+        default boolean supportsBoating(Boat boat) {
+            return true;
+        }
+
+        @Override
+        default boolean canHydrate() {
+            return true;
+        }
+
+        @Override
+        @Nullable
+        default DripstoneDripInfo getDripInfo() {
+            return DRIP_INFO;
+        }
+
+        @Override
+        default @Nullable SoundEvent getSound(SoundAction action) {
+            return SOUNDS.get(action);
+        }
+
+        @Override
+        default void initializeClient(Consumer<IClientFluidExtensions> consumer) {
+            consumer.accept(new IClientFluidExtensions() {
                 private static final ResourceLocation STILL = new ResourceLocation("block/water_still"),
                         FLOW = new ResourceLocation("block/water_flow"),
                         OVERLAY = new ResourceLocation("block/obsidian"),
@@ -159,9 +198,24 @@ public class FluidTypeTest {
                 }
             });
         }
-    });
-    private static final DeferredHolder<Fluid, FlowingFluid> TEST_FLUID = FLUIDS.register("test_fluid", () -> new BaseFlowingFluid.Source(fluidProperties()));
-    private static final DeferredHolder<Fluid, Fluid> TEST_FLUID_FLOWING = FLUIDS.register("test_fluid_flowing", () -> new BaseFlowingFluid.Flowing(fluidProperties()));
+
+        class Source extends BaseFlowingFluid.Source implements TestFluid {
+
+            public Source(Properties properties) {
+                super(properties);
+            }
+        }
+
+        class Flowing extends BaseFlowingFluid.Flowing implements TestFluid {
+
+            public Flowing(Properties properties) {
+                super(properties);
+            }
+        }
+    }
+
+    private static final DeferredHolder<Fluid, FlowingFluid> TEST_FLUID = FLUIDS.register("test_fluid", () -> new TestFluid.Source(fluidProperties()));
+    private static final DeferredHolder<Fluid, Fluid> TEST_FLUID_FLOWING = FLUIDS.register("test_fluid_flowing", () -> new TestFluid.Flowing(fluidProperties()));
     private static final DeferredBlock<LiquidBlock> TEST_FLUID_BLOCK = BLOCKS.register("test_fluid_block", () -> new LiquidBlock(TEST_FLUID.get(), BlockBehaviour.Properties.of().noCollission().strength(100.0F).noLootTable()));
     private static final DeferredItem<Item> TEST_FLUID_BUCKET = ITEMS.register("test_fluid_bucket", () -> new BucketItem(TEST_FLUID.get(), new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
 
@@ -170,18 +224,27 @@ public class FluidTypeTest {
             logger = LogManager.getLogger();
             NeoForgeMod.enableMilkFluid();
 
-            FLUID_TYPES.register(modEventBus);
             FLUIDS.register(modEventBus);
             BLOCKS.register(modEventBus);
             ITEMS.register(modEventBus);
 
             modEventBus.addListener(this::commonSetup);
             modEventBus.addListener(this::addCreative);
+            modEventBus.addListener(this::dataGen);
 
             if (FMLEnvironment.dist.isClient()) {
                 new FluidTypeTestClient(modEventBus);
             }
         }
+    }
+
+    private void dataGen(GatherDataEvent event) {
+        event.getGenerator().addProvider(event.includeServer(), new FluidTagsProvider(event.getGenerator().getPackOutput(), event.getLookupProvider(), ID, event.getExistingFileHelper()) {
+            @Override
+            protected void addTags(HolderLookup.Provider p_256366_) {
+                this.tag(TEST_FLUID_TAG).add(TEST_FLUID.value(), TEST_FLUID_FLOWING.value());
+            }
+        });
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
@@ -191,11 +254,11 @@ public class FluidTypeTest {
 
     private void commonSetup(FMLCommonSetupEvent event) {
         // Add Interactions for sources
-        FluidInteractionRegistry.addInteraction(TEST_FLUID_TYPE.value(), new FluidInteractionRegistry.InteractionInformation(NeoForgeMod.LAVA_TYPE.value(), Blocks.GOLD_BLOCK.defaultBlockState()));
-        FluidInteractionRegistry.addInteraction(NeoForgeMod.WATER_TYPE.value(), new FluidInteractionRegistry.InteractionInformation(TEST_FLUID_TYPE.value(), state -> state.isSource() ? Blocks.DIAMOND_BLOCK.defaultBlockState() : Blocks.IRON_BLOCK.defaultBlockState()));
+        FluidInteractionRegistry.addInteraction(TEST_FLUID.value(), new FluidInteractionRegistry.InteractionInformation(FluidTags.LAVA, Blocks.GOLD_BLOCK.defaultBlockState()));
+        FluidInteractionRegistry.addInteraction(TEST_FLUID_FLOWING.value(), new FluidInteractionRegistry.InteractionInformation(FluidTags.LAVA, Blocks.GOLD_BLOCK.defaultBlockState()));
 
-        // Log Fluid Types for all fluids
-        event.enqueueWork(() -> BuiltInRegistries.FLUID.forEach(fluid -> logger.info("Fluid {} has FluidType {}", BuiltInRegistries.FLUID.getKey(fluid), NeoForgeRegistries.FLUID_TYPES.getKey(fluid.getFluidType()))));
+        FluidInteractionRegistry.addInteraction(Fluids.WATER, new FluidInteractionRegistry.InteractionInformation(TEST_FLUID_TAG, Blocks.DIAMOND_BLOCK.defaultBlockState()));
+        FluidInteractionRegistry.addInteraction(Fluids.FLOWING_WATER, new FluidInteractionRegistry.InteractionInformation(TEST_FLUID_TAG, Blocks.IRON_BLOCK.defaultBlockState()));
     }
 
     private static class FluidTypeTestClient {
@@ -213,7 +276,7 @@ public class FluidTypeTest {
             event.register((state, getter, pos, index) -> {
                 if (getter != null && pos != null) {
                     FluidState fluidState = getter.getFluidState(pos);
-                    return IClientFluidTypeExtensions.of(fluidState).getTintColor(fluidState, getter, pos);
+                    return IClientFluidExtensions.of(fluidState).getTintColor(fluidState, getter, pos);
                 } else return 0xAF7FFFD4;
             }, TEST_FLUID_BLOCK.get());
         }

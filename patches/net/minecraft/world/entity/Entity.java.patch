@@ -45,7 +45,7 @@
          if (this.isInLava()) {
              this.lavaHurt();
 -            this.fallDistance *= 0.5F;
-+            this.fallDistance *= this.getFluidFallDistanceModifier(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
++            this.fallDistance *= this.getFluidFallDistanceModifier(net.minecraft.world.level.material.Fluids.LAVA);
          }
  
          this.checkBelowWorld();
@@ -63,13 +63,13 @@
                      }
  
 -                    if (this.wasOnFire && (this.isInPowderSnow || this.isInWaterRainOrBubble())) {
-+                    if (this.wasOnFire && (this.isInPowderSnow || this.isInWaterRainOrBubble() || this.isInFluidType((fluidType, height) -> this.canFluidExtinguish(fluidType)))) {
++                    if (this.wasOnFire && (this.isInPowderSnow || this.isInWaterRainOrBubble() || this.isInFluid((fluid, height) -> this.canFluidExtinguish(fluid)))) {
                          this.playEntityOnFireExtinguishedSound();
                      }
                  }
  
 -                if (this.isOnFire() && (this.isInPowderSnow || this.isInWaterRainOrBubble())) {
-+                if (this.isOnFire() && (this.isInPowderSnow || this.isInWaterRainOrBubble() || this.isInFluidType((fluidType, height) -> this.canFluidExtinguish(fluidType)))) {
++                if (this.isOnFire() && (this.isInPowderSnow || this.isInWaterRainOrBubble() || this.isInFluid((fluid, height) -> this.canFluidExtinguish(fluid)))) {
                      this.setRemainingFireTicks(-this.getFireImmuneTicks());
                  }
  
@@ -120,7 +120,7 @@
      public void updateSwimming() {
          if (this.isSwimming()) {
 -            this.setSwimming(this.isSprinting() && this.isInWater() && !this.isPassenger());
-+            this.setSwimming(this.isSprinting() && (this.isInWater() || this.isInFluidType((fluidType, height) -> this.canSwimInFluidType(fluidType))) && !this.isPassenger());
++            this.setSwimming(this.isSprinting() && (this.isInWater() || this.isInFluid((fluid, height) -> this.canSwimInFluid(fluid))) && !this.isPassenger());
          } else {
              this.setSwimming(
 -                this.isSprinting() && this.isUnderWater() && !this.isPassenger() && this.level().getFluidState(this.blockPosition).is(FluidTags.WATER)
@@ -131,16 +131,16 @@
  
      protected boolean updateInWaterStateAndDoFluidPushing() {
          this.fluidHeight.clear();
-+        this.forgeFluidTypeHeight.clear();
++        this.neoforgeFluidHeight.clear();
          this.updateInWaterStateAndDoWaterCurrentPushing();
 -        double d0 = this.level().dimensionType().ultraWarm() ? 0.007 : 0.0023333333333333335;
 -        boolean flag = this.updateFluidHeightAndDoFluidPushing(FluidTags.LAVA, d0);
 -        return this.isInWater() || flag;
-+        if (this.isInFluidType() && !(this.getVehicle() instanceof Boat)) {
-+            this.fallDistance *= this.forgeFluidTypeHeight.object2DoubleEntrySet().stream().filter(e -> !e.getKey().isAir() && !e.getKey().isVanilla()).map(e -> this.getFluidFallDistanceModifier(e.getKey())).min(Float::compare).orElse(1F);
-+            if (this.isInFluidType((fluidType, height) -> !fluidType.isAir() && !fluidType.isVanilla() && this.canFluidExtinguish(fluidType))) this.clearFire();
++        if (this.isInFluid() && !(this.getVehicle() instanceof Boat)) {
++            this.fallDistance *= this.neoforgeFluidHeight.object2DoubleEntrySet().stream().filter(e -> !e.getKey().isAir() && !e.getKey().isVanilla()).map(e -> this.getFluidFallDistanceModifier(e.getKey())).min(Float::compare).orElse(1F);
++            if (this.isInFluid((fluid, height) -> !fluid.isAir() && !fluid.isVanilla() && this.canFluidExtinguish(fluid))) this.clearFire();
 +        }
-+        return this.isInFluidType();
++        return this.isInFluid();
      }
  
      void updateInWaterStateAndDoWaterCurrentPushing() {
@@ -148,7 +148,7 @@
      private void updateFluidOnEyes() {
          this.wasEyeInWater = this.isEyeInFluid(FluidTags.WATER);
          this.fluidOnEyes.clear();
-+        this.forgeFluidTypeOnEyes = net.neoforged.neoforge.common.NeoForgeMod.EMPTY_TYPE.value();
++        this.neoforgeFluidOnEyes = net.minecraft.world.level.material.Fluids.EMPTY;
          double d0 = this.getEyeY();
          if (this.getVehicle() instanceof Boat boat && !boat.isUnderWater() && boat.getBoundingBox().maxY >= d0 && boat.getBoundingBox().minY <= d0) {
              return;
@@ -157,7 +157,7 @@
          double d1 = (double)((float)blockpos.getY() + fluidstate.getHeight(this.level(), blockpos));
          if (d1 > d0) {
 -            fluidstate.getTags().forEach(this.fluidOnEyes::add);
-+            this.forgeFluidTypeOnEyes = fluidstate.getFluidType();
++            this.neoforgeFluidOnEyes = fluidstate.getType();
          }
      }
  
@@ -166,7 +166,7 @@
  
      public boolean canSpawnSprintParticle() {
 -        return this.isSprinting() && !this.isInWater() && !this.isSpectator() && !this.isCrouching() && !this.isInLava() && this.isAlive();
-+        return this.isSprinting() && !this.isInWater() && !this.isSpectator() && !this.isCrouching() && !this.isInLava() && this.isAlive() && !this.isInFluidType();
++        return this.isSprinting() && !this.isInWater() && !this.isSpectator() && !this.isCrouching() && !this.isInLava() && this.isAlive() && !this.isInFluid();
      }
  
      protected void spawnSprintParticle() {
@@ -187,14 +187,14 @@
  
 +    @Deprecated // Forge: Use isEyeInFluidType instead
      public boolean isEyeInFluid(TagKey<Fluid> p_204030_) {
-+        if (p_204030_ == FluidTags.WATER) return this.isEyeInFluidType(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
-+        else if (p_204030_ == FluidTags.LAVA) return this.isEyeInFluidType(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
++        if (p_204030_ == FluidTags.WATER) return this.isEyeInFluid(net.minecraft.world.level.material.Fluids.WATER) && this.isEyeInFluid(net.minecraft.world.level.material.Fluids.FLOWING_WATER);
++        else if (p_204030_ == FluidTags.LAVA) return this.isEyeInFluid(net.minecraft.world.level.material.Fluids.LAVA) && this.isEyeInFluid(net.minecraft.world.level.material.Fluids.FLOWING_LAVA);
          return this.fluidOnEyes.contains(p_204030_);
      }
  
      public boolean isInLava() {
 -        return !this.firstTick && this.fluidHeight.getDouble(FluidTags.LAVA) > 0.0;
-+        return !this.firstTick && this.forgeFluidTypeHeight.getDouble(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value()) > 0.0D;
++        return !this.firstTick && this.getFluidHeight(FluidTags.LAVA) > 0.0D;
      }
  
      public void moveRelative(float p_19921_, Vec3 p_19922_) {
@@ -260,7 +260,7 @@
          return this.passengers.isEmpty();
      }
  
-+    /** @deprecated Forge: Use {@link #canBeRiddenUnderFluidType(net.neoforged.neoforge.fluids.FluidType, Entity) rider sensitive version} */
++    /** @deprecated Forge: Use {@link #canBeRiddenUnderFluid(Fluid, Entity) rider sensitive version} */
 +    @Deprecated
      protected boolean couldAcceptPassenger() {
          return true;
@@ -270,7 +270,7 @@
  
      public boolean isVisuallyCrawling() {
 -        return this.isVisuallySwimming() && !this.isInWater();
-+        return this.isVisuallySwimming() && !this.isInWater() && !this.isInFluidType((fluidType, height) -> this.canSwimInFluidType(fluidType));
++        return this.isVisuallySwimming() && !this.isInWater() && !this.isInFluid((fluid, height) -> this.canSwimInFluid(fluid));
      }
  
      public void setSwimming(boolean p_20283_) {
@@ -374,8 +374,8 @@
 +    @Deprecated // Forge: Use no parameter version instead, only for vanilla Tags
      public boolean updateFluidHeightAndDoFluidPushing(TagKey<Fluid> p_204032_, double p_204033_) {
 +        this.updateFluidHeightAndDoFluidPushing();
-+        if(p_204032_ == FluidTags.WATER) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
-+        else if (p_204032_ == FluidTags.LAVA) return this.isInFluidType(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
++        if(p_204032_ == FluidTags.WATER) return this.getFluidHeight(FluidTags.WATER) > 0.0D;
++        else if (p_204032_ == FluidTags.LAVA) return this.getFluidHeight(FluidTags.LAVA) > 0.0D;
 +        else return false;
 +    }
 +
@@ -386,16 +386,14 @@
          } else {
              AABB aabb = this.getBoundingBox().deflate(0.001);
              int i = Mth.floor(aabb.minX);
-@@ -3101,25 +_,36 @@
+@@ -3101,24 +_,33 @@
              Vec3 vec3 = Vec3.ZERO;
              int k1 = 0;
              BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
 +            class InterimCalculation {
 +                double fluidHeight = 0.0D;
-+                Vec3 flowVector = Vec3.ZERO;
-+                int blockCount = 0;
 +            }
-+            it.unimi.dsi.fastutil.objects.Object2ObjectMap<net.neoforged.neoforge.fluids.FluidType, InterimCalculation> interimCalcs = null;
++            it.unimi.dsi.fastutil.objects.Object2ObjectMap<Fluid, InterimCalculation> interimCalcs = null;
  
              for (int l1 = i; l1 < j; l1++) {
                  for (int i2 = k; i2 < l; i2++) {
@@ -403,8 +401,8 @@
                          blockpos$mutableblockpos.set(l1, i2, j2);
                          FluidState fluidstate = this.level().getFluidState(blockpos$mutableblockpos);
 -                        if (fluidstate.is(p_204032_)) {
-+                        net.neoforged.neoforge.fluids.FluidType fluidType = fluidstate.getFluidType();
-+                        if (!fluidType.isAir()) {
++                        Fluid fluid = fluidstate.getType();
++                        if (!fluid.isAir()) {
                              double d1 = (double)((float)i2 + fluidstate.getHeight(this.level(), blockpos$mutableblockpos));
                              if (d1 >= aabb.minY) {
                                  flag1 = true;
@@ -413,9 +411,9 @@
 +                                if (interimCalcs == null) {
 +                                    interimCalcs = new it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap<>();
 +                                }
-+                                InterimCalculation interim = interimCalcs.computeIfAbsent(fluidType, t -> new InterimCalculation());
++                                InterimCalculation interim = interimCalcs.computeIfAbsent(fluid, t -> new InterimCalculation());
 +                                interim.fluidHeight = Math.max(d1 - aabb.minY, interim.fluidHeight);
-+                                if (this.isPushedByFluid(fluidType)) {
++                                if (this.isPushedByFluid(fluid)) {
                                      Vec3 vec31 = fluidstate.getFlow(this.level(), blockpos$mutableblockpos);
 -                                    if (d0 < 0.4) {
 -                                        vec31 = vec31.scale(d0);
@@ -424,49 +422,40 @@
                                      }
  
 -                                    vec3 = vec3.add(vec31);
--                                    k1++;
-+                                    interim.flowVector = interim.flowVector.add(vec31);
-+                                    interim.blockCount++;
++                                    vec3 = vec3.add(vec31.scale(this.getFluidMotionScale(fluid)));
+                                     k1++;
                                  }
                              }
-                         }
-@@ -3127,27 +_,30 @@
+@@ -3127,27 +_,26 @@
                  }
              }
  
 -            if (vec3.length() > 0.0) {
--                if (k1 > 0) {
--                    vec3 = vec3.scale(1.0 / (double)k1);
 +            if(interimCalcs != null) {
-+            interimCalcs.forEach((fluidType, interim) -> {
-+            if (interim.flowVector.length() > 0.0D) {
-+                if (interim.blockCount > 0) {
-+                    interim.flowVector = interim.flowVector.scale(1.0D / (double)interim.blockCount);
++            if (vec3.length() > 0.0D) {
+                 if (k1 > 0) {
+                     vec3 = vec3.scale(1.0 / (double)k1);
                  }
  
-                 if (!(this instanceof Player)) {
--                    vec3 = vec3.normalize();
-+                    interim.flowVector = interim.flowVector.normalize();
+-                if (!(this instanceof Player)) {
++                if (false && !(this instanceof Player)) { // NeoForge: Ignore normalization for non-players
+                     vec3 = vec3.normalize();
                  }
  
                  Vec3 vec32 = this.getDeltaMovement();
 -                vec3 = vec3.scale(p_204033_ * 1.0);
-+                interim.flowVector = interim.flowVector.scale(this.getFluidMotionScale(fluidType));
                  double d2 = 0.003;
 -                if (Math.abs(vec32.x) < 0.003 && Math.abs(vec32.z) < 0.003 && vec3.length() < 0.0045000000000000005) {
--                    vec3 = vec3.normalize().scale(0.0045000000000000005);
-+                if (Math.abs(vec32.x) < 0.003D && Math.abs(vec32.z) < 0.003D && interim.flowVector.length() < 0.0045000000000000005D) {
-+                    interim.flowVector = interim.flowVector.normalize().scale(0.0045000000000000005D);
++                if (Math.abs(vec32.x) < 0.003D && Math.abs(vec32.z) < 0.003D && vec3.length() < 0.0045000000000000005D) {
+                     vec3 = vec3.normalize().scale(0.0045000000000000005);
                  }
  
--                this.setDeltaMovement(this.getDeltaMovement().add(vec3));
-+                this.setDeltaMovement(this.getDeltaMovement().add(interim.flowVector));
+                 this.setDeltaMovement(this.getDeltaMovement().add(vec3));
              }
- 
+-
 -            this.fluidHeight.put(p_204032_, d0);
 -            return flag1;
-+            this.setFluidTypeHeight(fluidType, interim.fluidHeight);
-+            });
++            interimCalcs.forEach((fluid, calc) -> this.neoforgeFluidHeight.put(fluid, calc.fluidHeight));
 +            }
          }
      }
@@ -475,10 +464,10 @@
          return !this.level().hasChunksAt(i, k, j, l);
      }
  
-+    @Deprecated // Forge: Use getFluidTypeHeight instead
++    @Deprecated // NeoForge: Use getFluidHeight(Fluid) instead
      public double getFluidHeight(TagKey<Fluid> p_204037_) {
-+        if (p_204037_ == FluidTags.WATER) return getFluidTypeHeight(net.neoforged.neoforge.common.NeoForgeMod.WATER_TYPE.value());
-+        else if (p_204037_ == FluidTags.LAVA) return getFluidTypeHeight(net.neoforged.neoforge.common.NeoForgeMod.LAVA_TYPE.value());
++        if (p_204037_ == FluidTags.WATER) return Math.max(this.getFluidHeight(net.minecraft.world.level.material.Fluids.WATER), this.getFluidHeight(net.minecraft.world.level.material.Fluids.FLOWING_WATER));
++        else if (p_204037_ == FluidTags.LAVA) return Math.max(this.getFluidHeight(net.minecraft.world.level.material.Fluids.LAVA), this.getFluidHeight(net.minecraft.world.level.material.Fluids.FLOWING_LAVA));
          return this.fluidHeight.getDouble(p_204037_);
      }
  
@@ -553,37 +542,37 @@
 +        return this.getEyeHeight(pose);
 +    }
 +
-+    protected Object2DoubleMap<net.neoforged.neoforge.fluids.FluidType> forgeFluidTypeHeight = new Object2DoubleArrayMap<>(net.neoforged.neoforge.fluids.FluidType.SIZE.get());
-+    private net.neoforged.neoforge.fluids.FluidType forgeFluidTypeOnEyes = net.neoforged.neoforge.common.NeoForgeMod.EMPTY_TYPE.value();
-+    protected final void setFluidTypeHeight(net.neoforged.neoforge.fluids.FluidType type, double height) {
-+        this.forgeFluidTypeHeight.put(type, height);
++    protected Object2DoubleMap<Fluid> neoforgeFluidHeight = new Object2DoubleArrayMap<>(net.minecraft.core.registries.BuiltInRegistries.FLUID.size());
++    private Fluid neoforgeFluidOnEyes = net.minecraft.world.level.material.Fluids.EMPTY;
++    protected final void setFluidHeight(Fluid fluid, double height) {
++        this.neoforgeFluidHeight.put(fluid, height);
 +    }
 +    @Override
-+    public final double getFluidTypeHeight(net.neoforged.neoforge.fluids.FluidType type) {
-+        return this.forgeFluidTypeHeight.getDouble(type);
++    public final double getFluidHeight(Fluid fluid) {
++        return this.neoforgeFluidHeight.getDouble(fluid);
 +    }
 +    @Override
-+    public final boolean isInFluidType(java.util.function.BiPredicate<net.neoforged.neoforge.fluids.FluidType, Double> predicate, boolean forAllTypes) {
-+        if (this.forgeFluidTypeHeight.isEmpty()) {
++    public final boolean isInFluid(java.util.function.BiPredicate<Fluid, Double> predicate, boolean forAllTypes) {
++        if (this.neoforgeFluidHeight.isEmpty()) {
 +            return false;
 +        }
-+        return forAllTypes ? this.forgeFluidTypeHeight.object2DoubleEntrySet().stream().allMatch(e -> predicate.test(e.getKey(), e.getDoubleValue()))
-+                  : this.forgeFluidTypeHeight.object2DoubleEntrySet().stream().anyMatch(e -> predicate.test(e.getKey(), e.getDoubleValue()));
++        return forAllTypes ? this.neoforgeFluidHeight.object2DoubleEntrySet().stream().allMatch(e -> predicate.test(e.getKey(), e.getDoubleValue()))
++                : this.neoforgeFluidHeight.object2DoubleEntrySet().stream().anyMatch(e -> predicate.test(e.getKey(), e.getDoubleValue()));
 +    }
 +    @Override
-+    public final boolean isInFluidType() {
-+        return this.forgeFluidTypeHeight.size() > 0;
-+    }
-+  @Override
-+  public final net.neoforged.neoforge.fluids.FluidType getEyeInFluidType() {
-+        return forgeFluidTypeOnEyes;
++    public final boolean isInFluid() {
++        return !this.neoforgeFluidHeight.isEmpty();
 +    }
 +    @Override
-+    public net.neoforged.neoforge.fluids.FluidType getMaxHeightFluidType() {
-+        if (this.forgeFluidTypeHeight.isEmpty()) {
-+            return net.neoforged.neoforge.common.NeoForgeMod.EMPTY_TYPE.value();
++    public final Fluid getEyeInFluid() {
++        return this.neoforgeFluidOnEyes;
++    }
++    @Override
++    public final Fluid getMaxHeightFluid() {
++        if (this.neoforgeFluidHeight.isEmpty()) {
++            return net.minecraft.world.level.material.Fluids.EMPTY;
 +        }
-+        return this.forgeFluidTypeHeight.object2DoubleEntrySet().stream().max(java.util.Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue)).map(Object2DoubleMap.Entry::getKey).orElseGet(net.neoforged.neoforge.common.NeoForgeMod.EMPTY_TYPE::value);
++        return this.neoforgeFluidHeight.object2DoubleEntrySet().stream().max(java.util.Comparator.comparingDouble(Object2DoubleMap.Entry::getDoubleValue)).map(Object2DoubleMap.Entry::getKey).orElse(net.minecraft.world.level.material.Fluids.EMPTY);
 +    }
 +
 +    @Override

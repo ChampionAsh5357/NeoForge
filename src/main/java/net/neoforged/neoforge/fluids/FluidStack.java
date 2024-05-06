@@ -371,10 +371,10 @@ public final class FluidStack implements MutableDataComponentHolder {
     }
 
     /**
-     * Returns the {@link FluidType#getDescriptionId(FluidStack) description id} of this stack.
+     * Returns the {@link Fluid#getDescriptionId(FluidStack) description id} of this stack.
      */
     public String getDescriptionId() {
-        return this.getFluidType().getDescriptionId(this);
+        return this.getFluid().getDescriptionId(this);
     }
 
     @Override
@@ -420,7 +420,7 @@ public final class FluidStack implements MutableDataComponentHolder {
      * Returns the hover name of this stack.
      */
     public Component getHoverName() {
-        return getFluidType().getDescription(this);
+        return getFluid().getDescription(this);
     }
 
     /**
@@ -462,20 +462,6 @@ public final class FluidStack implements MutableDataComponentHolder {
 
     // Extra methods that are not directly adapted from ItemStack go below
 
-    /**
-     * Returns the fluid type of this stack.
-     */
-    public FluidType getFluidType() {
-        return getFluid().getFluidType();
-    }
-
-    /**
-     * Check if the fluid type of this stack is equal to the given fluid type.
-     */
-    public boolean is(FluidType fluidType) {
-        return getFluidType() == fluidType;
-    }
-
     // Deprecated pre-1.20.5 methods that are kept around for a while to allow for a transition go below
 
     /**
@@ -491,7 +477,7 @@ public final class FluidStack implements MutableDataComponentHolder {
      */
     @Deprecated(forRemoval = true, since = "1.20.5")
     public String getTranslationKey() {
-        return getFluidType().getDescriptionId(this);
+        return getFluid().getDescriptionId(this);
     }
 
     /**
